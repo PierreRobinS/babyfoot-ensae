@@ -12,6 +12,16 @@ python app.py
 
 Ouvrir ensuite `http://127.0.0.1:5000`.
 
+## Déploiement Render
+
+Render doit installer `requirements.txt`, puis lancer:
+
+```bash
+gunicorn app:app
+```
+
+Le fichier `runtime.txt` force Python `3.11.9`, plus stable que la version par défaut de Render.
+
 ## Comptes de démo
 
 Tous les comptes de démo utilisent le mot de passe `password123`.
