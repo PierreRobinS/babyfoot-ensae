@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Babyfoot ENSAE{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+<body class="{% if current_user.is_authenticated %}signed-in{% else %}signed-out{% endif %}">
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand" href="{{ url_for('main.home') if current_user.is_authenticated else url_for('auth.login') }}">
+                <span class="brand-mark"></span>
+                <span>
+                    <strong>Babyfoot ENSAE</strong>
+                    <small>Glicko-2 live</small>
+                </span>
+            </a>
+            {% if current_user.is_authenticated %}
+                <a class="mini-profile" href="{{ url_for('profiles.profile', user_id=current_user.id) }}">
+                    <img src="{{ current_user.avatar_url }}" alt="">
+                    <span>{{ current_user.pseudo }}</span>
+                </a>
+            {% endif %}
+        </header>
+
+        <main class="page">
+            {% if site_settings.get('global_banner') %}
+                <aside class="global-banner reveal">{{ site_settings.get('global_banner') }}</aside>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if current_user.is_authenticated %}
+            <nav class="bottom-nav" aria-label="Navigation">
+                <a class="{% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+                    <span class="nav-dot"></span>
+                    Accueil
+                </a>
+                <a class="{% if request.endpoint == 'rankings.rankings' %}active{% endif %}" href="{{ url_for('rankings.rankings') }}">
+                    <span class="nav-dot"></span>
+                    Classements
+                </a>
+                {% if current_user.is_admin %}
+                <a class="{% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                    <span class="nav-dot"></span>
+                    Admin
+                </a>
+                {% else %}
+                <a class="{% if request.endpoint and request.endpoint.startswith('profiles.') %}active{% endif %}" href="{{ url_for('profiles.profile', user_id=current_user.id) }}">
+                    <span class="nav-dot"></span>
+                    Profil
+                </a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </div>
+
+    <div id="toast-root" class="toast-root" aria-live="polite">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="toast {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+</body>
+</html>

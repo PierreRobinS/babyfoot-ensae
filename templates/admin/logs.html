@@ -1,0 +1,23 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Logs{% endblock %}
+{% block admin_title %}Logs{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <form class="admin-search" method="get">
+        <input type="search" name="action" value="{{ action }}" placeholder="Filtrer action">
+        <button class="primary-btn" type="submit">Filtrer</button>
+    </form>
+</section>
+<section class="admin-card-list reveal">
+    {% for log in logs %}
+        <article class="log-card">
+            <strong>{{ log.action }}</strong>
+            <span>{{ log.created_at.strftime('%d/%m/%Y %H:%M') }} · {{ log.admin.pseudo if log.admin else 'system' }} · {{ log.ip_address }}</span>
+            <small>{{ log.target_type or '-' }} #{{ log.target_id or '-' }} · {{ log.details or '' }}</small>
+        </article>
+    {% else %}
+        <div class="empty-state">Aucun log.</div>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Historique · {{ user.pseudo }}{% endblock %}
+
+{% block content %}
+<section class="panel reveal">
+    <div class="section-head">
+        <h1>Historique</h1>
+        <span class="soft-badge">{{ user.pseudo }}</span>
+    </div>
+    <h2>1v1</h2>
+    <div class="history-list">
+        {% for item in history_1v1 %}
+            {% include "_history_card.html" %}
+        {% else %}
+            <div class="empty-state">Aucun match 1v1.</div>
+        {% endfor %}
+    </div>
+    <h2>2v2</h2>
+    <div class="history-list">
+        {% for item in history_2v2 %}
+            {% include "_history_card.html" %}
+        {% else %}
+            <div class="empty-state">Aucun match 2v2.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

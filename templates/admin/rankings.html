@@ -1,0 +1,22 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Classements{% endblock %}
+{% block admin_title %}Classements{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <p class="prediction-line">Classement {{ "gelé" if frozen else "actif" }}</p>
+    <div class="admin-button-grid">
+        {% for action, label in [('recalc_1v1','Recalcul 1v1'),('recalc_2v2','Recalcul 2v2'),('reset_season','Reset saison'),('archive_season','Archiver'),('new_season','Nouvelle saison'),('freeze','Geler'),('unfreeze','Dégeler')] %}
+            <form method="post" data-confirm="Confirmer action classement ?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="{{ action }}">
+                <button class="secondary-btn {% if action == 'reset_season' %}danger{% endif %}" type="submit">{{ label }}</button>
+            </form>
+        {% endfor %}
+    </div>
+</section>
+<section class="admin-split reveal">
+    <article class="panel"><h2>Top 1v1</h2><div class="compact-list">{% for u in ranking_1v1 %}<a><span>{{ loop.index }}. {{ u.pseudo }}</span><strong>{{ u.rating_1v1|round|int }}</strong></a>{% endfor %}</div></article>
+    <article class="panel"><h2>Top 2v2</h2><div class="compact-list">{% for u in ranking_2v2 %}<a><span>{{ loop.index }}. {{ u.pseudo }}</span><strong>{{ u.rating_2v2|round|int }}</strong></a>{% endfor %}</div></article>
+</section>
+{% endblock %}

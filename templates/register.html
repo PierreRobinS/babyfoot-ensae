@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Inscription · Babyfoot ENSAE{% endblock %}
+
+{% block content %}
+<section class="auth-card reveal">
+    <div class="auth-visual">
+        <span></span>
+    </div>
+    <h1>Inscription</h1>
+    <form method="post" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>
+            Email ENSAE
+            <input type="email" name="email" autocomplete="email" placeholder="prenom.nom@ensae.fr" required>
+        </label>
+        <label>
+            Pseudo
+            <input type="text" name="pseudo" autocomplete="nickname" maxlength="40" required>
+        </label>
+        <label>
+            Mot de passe
+            <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+        </label>
+        <button class="primary-btn" type="submit">Créer le compte</button>
+    </form>
+    <p class="auth-link">Déjà inscrit ? <a href="{{ url_for('auth.login') }}">Se connecter</a></p>
+</section>
+{% endblock %}

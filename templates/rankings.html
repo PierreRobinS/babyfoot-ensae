@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Classements · Babyfoot ENSAE{% endblock %}
+
+{% block content %}
+<section class="panel reveal">
+    <div class="section-head">
+        <h1>Classements</h1>
+        <div class="segmented" data-rank-tabs>
+            <button type="button" class="active" data-rank-target="rank-1v1">1v1</button>
+            <button type="button" data-rank-target="rank-2v2">2v2</button>
+        </div>
+    </div>
+
+    <div id="rank-1v1" class="ranking-list active">
+        {% for user in ranking_1v1 %}
+            <a class="ranking-card" href="{{ url_for('profiles.profile', user_id=user.id) }}">
+                <span class="rank-number">#{{ loop.index }}</span>
+                <img src="{{ user.avatar_url }}" alt="">
+                <span class="rank-main">
+                    <strong>{{ user.pseudo }}</strong>
+                    <small>{{ user.matches_1v1 }} matchs · {{ user.winrate('1v1') }} %</small>
+                </span>
+                <span class="rank-elo">{{ user.rating_1v1|round|int }}</span>
+                <small class="rank-date">{% if user.last_activity %}{{ user.last_activity.strftime('%d/%m') }}{% else %}Neuf{% endif %}</small>
+            </a>
+        {% endfor %}
+    </div>
+
+    <div id="rank-2v2" class="ranking-list">
+        {% for user in ranking_2v2 %}
+            <a class="ranking-card" href="{{ url_for('profiles.profile', user_id=user.id) }}">
+                <span class="rank-number">#{{ loop.index }}</span>
+                <img src="{{ user.avatar_url }}" alt="">
+                <span class="rank-main">
+                    <strong>{{ user.pseudo }}</strong>
+                    <small>{{ user.matches_2v2 }} matchs · {{ user.winrate('2v2') }} %</small>
+                </span>
+                <span class="rank-elo">{{ user.rating_2v2|round|int }}</span>
+                <small class="rank-date">{% if user.last_activity %}{{ user.last_activity.strftime('%d/%m') }}{% else %}Neuf{% endif %}</small>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Tournois{% endblock %}
+{% block admin_title %}Tournois{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <form method="post" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="name" placeholder="Nom event">
+        <select name="kind"><option value="tournoi_1v1">Tournoi 1v1</option><option value="tournoi_2v2">Tournoi 2v2</option><option value="ladder_mensuel">Ladder mensuel</option><option value="defi_semaine">Défi semaine</option></select>
+        <input name="banner_message" placeholder="Bannière sur la home">
+        <label class="inline-check"><input type="checkbox" name="publish" value="1"> Publier</label>
+        <button class="primary-btn" type="submit">Créer</button>
+    </form>
+</section>
+<section class="admin-card-list reveal">
+    {% for t in tournaments %}
+        <article class="admin-card"><header><span><strong>{{ t.name }}</strong><small>{{ t.kind }} · {{ t.status }}</small></span><b>{{ t.created_at.strftime('%d/%m') }}</b></header><p class="muted">{{ t.banner_message }}</p></article>
+    {% else %}
+        <div class="empty-state">Aucun event.</div>
+    {% endfor %}
+</section>
+{% endblock %}

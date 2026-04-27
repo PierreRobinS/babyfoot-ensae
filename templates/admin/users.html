@@ -1,0 +1,92 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Joueurs{% endblock %}
+{% block admin_title %}Joueurs{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <form class="admin-search" method="get">
+        <input type="search" name="q" value="{{ q }}" placeholder="Rechercher pseudo, email, nom">
+        <button class="primary-btn" type="submit">Chercher</button>
+    </form>
+</section>
+
+<section class="admin-card-list reveal">
+    {% for user in users %}
+        <article class="admin-card">
+            <header>
+                <img src="{{ user.avatar_url }}" alt="">
+                <span><strong>{{ user.pseudo }} {% if user.badge %}<em>{{ user.badge }}</em>{% endif %}</strong><small>{{ user.email }}</small></span>
+                <b class="{% if user.is_banned %}negative{% else %}positive{% endif %}">{{ "Banni" if user.is_banned else "Actif" }}</b>
+            </header>
+            <div class="admin-meta">
+                <span>1v1 <strong>{{ user.rating_1v1|round|int }}</strong></span>
+                <span>2v2 <strong>{{ user.rating_2v2|round|int }}</strong></span>
+                <span>Inscrit <strong>{{ user.created_at.strftime('%d/%m/%y') }}</strong></span>
+                <span>Login <strong>{% if user.last_login_at %}{{ user.last_login_at.strftime('%d/%m') }}{% else %}-{% endif %}</strong></span>
+            </div>
+            <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}" class="admin-actions">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="update">
+                <input name="pseudo" value="{{ user.pseudo }}" aria-label="Pseudo">
+                <input name="rating_1v1" type="number" step="1" value="{{ user.rating_1v1|round|int }}" aria-label="Elo 1v1">
+                <input name="rating_2v2" type="number" step="1" value="{{ user.rating_2v2|round|int }}" aria-label="Elo 2v2">
+                <button class="secondary-btn" type="submit">Modifier</button>
+            </form>
+            <div class="admin-button-grid">
+                <a class="secondary-btn" href="{{ url_for('profiles.profile', user_id=user.id) }}">Profil</a>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="reset_glicko">
+                    <button class="secondary-btn" type="submit">Reset Glicko</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="reset_password">
+                    <input name="password" placeholder="Nouveau mdp">
+                    <button class="secondary-btn" type="submit">Reset mdp</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="badge">
+                    <input name="badge" placeholder="Badge" value="Champion">
+                    <button class="secondary-btn" type="submit">Badge</button>
+                </form>
+                <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.user_action', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="upload_photo">
+                    <input name="photo" type="file" accept="image/*">
+                    <button class="secondary-btn" type="submit">Photo</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="ban_temp">
+                    <input name="hours" type="number" value="24" min="1">
+                    <input name="reason" placeholder="Raison">
+                    <button class="secondary-btn danger" type="submit">Ban temp</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="unban">
+                    <button class="secondary-btn" type="submit">Débannir</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}" data-confirm="Bannir définitivement ce compte ?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="ban_perm">
+                    <button class="secondary-btn danger" type="submit">Ban définitif</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}" data-confirm="Supprimer ce compte et ses matchs ?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="delete">
+                    <button class="secondary-btn danger" type="submit">Supprimer</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.user_action', user_id=user.id) }}" data-confirm="Fusionner ce joueur vers l'ID cible ?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="merge">
+                    <input name="target_id" type="number" placeholder="ID cible">
+                    <button class="secondary-btn danger" type="submit">Fusionner</button>
+                </form>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+<article class="history-card {% if item.won %}win{% else %}loss{% endif %}">
+    <div>
+        <small>{{ item.date }} · {{ item.mode }}</small>
+        <strong>{{ item.result }} contre {{ item.opponents }}</strong>
+        <span>{{ item.allies }} · {{ item.score }}</span>
+    </div>
+    <b class="{% if item.delta >= 0 %}positive{% else %}negative{% endif %}">{{ "%+d"|format(item.delta) }}</b>
+</article>

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Accueil · Babyfoot ENSAE{% endblock %}
+
+{% block content %}
+<div class="home-page" data-dashboard>
+    <section class="hero-panel reveal">
+        <div>
+            <p class="eyebrow">Club babyfoot</p>
+            <h1>Salut {{ current_user.pseudo }}</h1>
+            <p class="hero-copy">1v1: {{ current_user.rating_1v1|round|int }} · 2v2: {{ current_user.rating_2v2|round|int }}</p>
+        </div>
+        <div class="rating-rings">
+            <span>1v1<br><strong>{{ current_user.matches_1v1 }}</strong></span>
+            <span>2v2<br><strong>{{ current_user.matches_2v2 }}</strong></span>
+        </div>
+    </section>
+
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>Invitations</h2>
+            <span class="soft-badge" id="pending-count">0</span>
+        </div>
+        <div id="pending-list" class="card-list"></div>
+    </section>
+
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>Partie</h2>
+            <div class="segmented" data-mode-switch>
+                <button type="button" class="active" data-mode-target="one">1v1</button>
+                <button type="button" data-mode-target="two">2v2</button>
+            </div>
+        </div>
+
+        <form class="challenge-form active" id="challenge-one" action="{{ url_for('matches.create_1v1') }}" method="post" data-challenge-form data-mode="1v1">
+            <div class="autocomplete" data-autocomplete>
+                <label>Adversaire</label>
+                <input type="text" placeholder="Pseudo, nom ou email" autocomplete="off">
+                <input type="hidden" name="opponent_id" data-player-id>
+                <div class="suggestions" data-suggestions></div>
+            </div>
+            <div class="prediction-card hidden" data-prediction="1v1"></div>
+            <button class="primary-btn" type="submit">Défier</button>
+        </form>
+
+        <form class="challenge-form" id="challenge-two" action="{{ url_for('matches.create_2v2') }}" method="post" data-challenge-form data-mode="2v2">
+            <div class="autocomplete" data-autocomplete>
+                <label>Partenaire</label>
+                <input type="text" placeholder="Pseudo, nom ou email" autocomplete="off">
+                <input type="hidden" name="partner_id" data-player-id data-role="partner">
+                <div class="suggestions" data-suggestions></div>
+            </div>
+            <div class="autocomplete" data-autocomplete>
+                <label>Équipe adverse · joueur 1</label>
+                <input type="text" placeholder="Pseudo, nom ou email" autocomplete="off">
+                <input type="hidden" name="opponent1_id" data-player-id data-role="opponent1">
+                <div class="suggestions" data-suggestions></div>
+            </div>
+            <div class="autocomplete" data-autocomplete>
+                <label>Équipe adverse · joueur 2</label>
+                <input type="text" placeholder="Pseudo, nom ou email" autocomplete="off">
+                <input type="hidden" name="opponent2_id" data-player-id data-role="opponent2">
+                <div class="suggestions" data-suggestions></div>
+            </div>
+            <div class="prediction-card hidden" data-prediction="2v2"></div>
+            <button class="primary-btn" type="submit">Inviter</button>
+        </form>
+    </section>
+
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>Matchs ouverts</h2>
+            <span class="soft-badge" id="active-count">0</span>
+        </div>
+        <div id="active-list" class="card-list"></div>
+    </section>
+
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>Événements</h2>
+        </div>
+        <div id="event-list" class="event-list"></div>
+    </section>
+</div>
+
+<script>
+    window.INITIAL_DASHBOARD = {{ dashboard|tojson }};
+</script>
+{% endblock %}

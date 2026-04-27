@@ -1,0 +1,46 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Matchs{% endblock %}
+{% block admin_title %}Matchs{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <form class="filter-row" method="get">
+        <select name="mode"><option value="">Tous modes</option><option value="1v1" {% if mode == '1v1' %}selected{% endif %}>1v1</option><option value="2v2" {% if mode == '2v2' %}selected{% endif %}>2v2</option></select>
+        <select name="status"><option value="">Tous statuts</option>{% for item in ['completed','cancelled','disputed','pending'] %}<option value="{{ item }}" {% if status == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+        <button class="primary-btn" type="submit">Filtrer</button>
+    </form>
+</section>
+
+<section class="admin-card-list reveal">
+    {% for match in matches %}
+        <article class="admin-card">
+            <header>
+                <span><strong>#{{ match.id }} · {{ match.mode }} · {{ match.status }}</strong><small>{{ match.team_label('A') }} vs {{ match.team_label('B') }}</small></span>
+                <b>{{ match.score_a if match.score_a is not none else '-' }}-{{ match.score_b if match.score_b is not none else '-' }}</b>
+            </header>
+            <div class="admin-meta">
+                <span>Date <strong>{{ match.created_at.strftime('%d/%m %H:%M') }}</strong></span>
+                <span>Round <strong>{{ match.proposal_round }}</strong></span>
+                <span>Host <strong>{{ match.host.pseudo }}</strong></span>
+                <span>Elo <strong>{% for p in match.participants %}{% if p.elo_delta is not none %}{{ p.user.pseudo }} {{ "%+d"|format(p.elo_delta|round|int) }} {% endif %}{% endfor %}</strong></span>
+            </div>
+            <form method="post" action="{{ url_for('admin.match_action', match_id=match.id) }}" class="admin-actions">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="score">
+                <input name="score_a" type="number" min="0" max="10" value="{{ match.score_a or 10 }}">
+                <input name="score_b" type="number" min="0" max="10" value="{{ match.score_b or 8 }}">
+                <button class="secondary-btn" type="submit">Corriger/valider</button>
+            </form>
+            <div class="admin-button-grid">
+                {% for action, label in [('manual_validate','Valider'),('force_a','Victoire A'),('force_b','Victoire B'),('unlock','Débloquer'),('recalculate','Recalculer'),('cancel','Annuler'),('delete','Supprimer')] %}
+                    <form method="post" action="{{ url_for('admin.match_action', match_id=match.id) }}" {% if action in ['delete','cancel','force_a','force_b'] %}data-confirm="Confirmer action match ?"{% endif %}>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="{{ action }}">
+                        <button class="secondary-btn {% if action in ['delete','cancel'] %}danger{% endif %}" type="submit">{{ label }}</button>
+                    </form>
+                {% endfor %}
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

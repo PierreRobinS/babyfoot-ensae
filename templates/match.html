@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Match {{ match.mode }} · Babyfoot ENSAE{% endblock %}
+
+{% block content %}
+<section class="match-hero reveal">
+    <div class="match-status-row">
+        <span class="mode-chip">{{ match.mode }}</span>
+        <span class="status-chip {{ match.status }}">{{ match.status.replace('_', ' ') }}</span>
+    </div>
+    <div class="versus-board">
+        <div>
+            <small>Équipe A</small>
+            <strong>{{ match.team_label('A') }}</strong>
+        </div>
+        <span class="versus-score">{% if match.score_a is not none %}{{ match.score_a }}-{{ match.score_b }}{% else %}vs{% endif %}</span>
+        <div>
+            <small>Équipe B</small>
+            <strong>{{ match.team_label('B') }}</strong>
+        </div>
+    </div>
+    {% if prediction %}
+        <p class="prediction-line">{{ prediction.text }}</p>
+    {% endif %}
+    {% if match.started_at %}
+        <div class="chrono" data-started-at="{{ match.started_at.isoformat() }}Z">00:00</div>
+    {% endif %}
+</section>
+
+{% if match.status == "pending_invitation" %}
+    <section class="panel reveal">
+        {% if participant.invitation_status == "pending" %}
+            <h2>Invitation</h2>
+            <p class="muted">{{ match.team_label('A') }} contre {{ match.team_label('B') }}</p>
+            <div class="action-row">
+                <button class="secondary-btn js-invite" data-match-id="{{ match.id }}" data-action="refuse">Refuser</button>
+                <button class="primary-btn js-invite" data-match-id="{{ match.id }}" data-action="accept">Accepter</button>
+            </div>
+        {% else %}
+            <h2>En attente</h2>
+            <p class="muted">{{ match.team_label('A') }} contre {{ match.team_label('B') }}</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if match.status in ["active", "disputed"] %}
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>{% if match.status == "disputed" %}Correction{% else %}Score{% endif %}</h2>
+            <span class="soft-badge">{{ match.proposal_round }}/{{ max_proposals }}</span>
+        </div>
+        {% if match.mode == "1v1" or match.host_id == current_user.id %}
+            <form method="post" action="{{ url_for('matches.submit_score', match_id=match.id) }}" class="score-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>
+                    Équipe A
+                    <input type="number" min="0" max="10" name="score_a" value="{{ match.score_a or '' }}" inputmode="numeric" required>
+                </label>
+                <label>
+                    Équipe B
+                    <input type="number" min="0" max="10" name="score_b" value="{{ match.score_b or '' }}" inputmode="numeric" required>
+                </label>
+                <button class="primary-btn" type="submit">Terminer la partie</button>
+            </form>
+        {% else %}
+            <p class="muted">Score saisi par {{ match.host.pseudo }}.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if match.status == "pending_validation" %}
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>Validation</h2>
+            <span class="soft-badge">{{ match.proposal_round }}/{{ max_proposals }}</span>
+        </div>
+        <p class="score-line">{{ score_label }}</p>
+        {% if participant.validation_status == "pending" %}
+            <form method="post" action="{{ url_for('matches.validate_score', match_id=match.id) }}" class="action-row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="secondary-btn" type="submit" name="action" value="refuse">Contester</button>
+                <button class="primary-btn" type="submit" name="action" value="accept">Valider</button>
+            </form>
+        {% else %}
+            <p class="muted">Votre validation est enregistrée.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if match.status == "completed" %}
+    <section class="panel reveal">
+        <h2>Résultat validé</h2>
+        <p class="score-line">{{ score_label }}</p>
+        <div class="delta-grid">
+            {% for item in match.participants %}
+                <div class="delta-card">
+                    <img src="{{ item.user.avatar_url }}" alt="">
+                    <span>{{ item.user.pseudo }}</span>
+                    {% if item.elo_delta is not none %}
+                        <strong class="{% if item.elo_delta >= 0 %}positive{% else %}negative{% endif %}">
+                            {{ "%+d"|format(item.elo_delta|round|int) }}
+                        </strong>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
+
+{% if match.status == "cancelled" %}
+    <section class="panel reveal">
+        <h2>Match annulé</h2>
+        <p class="muted">{{ match.public_note or match.cancelled_reason }}</p>
+    </section>
+{% endif %}
+{% endblock %}

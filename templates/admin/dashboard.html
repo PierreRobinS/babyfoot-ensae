@@ -1,0 +1,68 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Dashboard{% endblock %}
+{% block admin_title %}Dashboard{% endblock %}
+
+{% block admin_content %}
+<section class="admin-stat-grid reveal">
+    {% for label, value in [
+        ("Joueurs", stats.players),
+        ("Actifs 7j", stats.active_7d),
+        ("Matchs jour", stats.matches_today),
+        ("Matchs total", stats.matches_total),
+        ("Annulés", stats.cancelled),
+        ("Litiges", stats.disputes_open),
+        ("Bans actifs", stats.active_bans)
+    ] %}
+        <article><small>{{ label }}</small><strong>{{ value }}</strong></article>
+    {% endfor %}
+</section>
+
+<section class="panel reveal">
+    <div class="section-head"><h2>Matchs par jour</h2><span class="soft-badge">7 jours</span></div>
+    <div class="mini-chart">
+        {% set max_match = (matches_by_day|map(attribute='count')|max) or 1 %}
+        {% for item in matches_by_day %}
+            <span style="--h: {{ 12 + (item.count / max_match * 88) if max_match else 12 }}%"><b>{{ item.count }}</b><small>{{ item.label }}</small></span>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel reveal">
+    <div class="section-head"><h2>Nouveaux inscrits</h2><span class="soft-badge">7 jours</span></div>
+    <div class="mini-chart alt">
+        {% set max_signup = (signups_by_day|map(attribute='count')|max) or 1 %}
+        {% for item in signups_by_day %}
+            <span style="--h: {{ 12 + (item.count / max_signup * 88) if max_signup else 12 }}%"><b>{{ item.count }}</b><small>{{ item.label }}</small></span>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="admin-split reveal">
+    <article class="panel">
+        <h2>Top progression semaine</h2>
+        <div class="compact-list">
+            {% for user, delta in top_progress %}
+                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ user.pseudo }}</span><strong class="positive">+{{ delta|round|int }}</strong></a>
+            {% else %}
+                <div class="empty-state">Pas encore de progression.</div>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="panel">
+        <h2>Top 1v1</h2>
+        <div class="compact-list">
+            {% for user in top_1v1 %}
+                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ loop.index }}. {{ user.pseudo }}</span><strong>{{ user.rating_1v1|round|int }}</strong></a>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="panel">
+        <h2>Top 2v2</h2>
+        <div class="compact-list">
+            {% for user in top_2v2 %}
+                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ loop.index }}. {{ user.pseudo }}</span><strong>{{ user.rating_2v2|round|int }}</strong></a>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · God Mode{% endblock %}
+{% block admin_title %}God Powers{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <p class="prediction-line">Tape <strong>GODMODE</strong> pour exécuter une action instantanée.</p>
+</section>
+<section class="admin-card-list reveal">
+    {% for action, label in [
+        ('reset_all_elo','Reset tous les Elo à 1500'),
+        ('global_notif','Envoyer notif globale'),
+        ('ban_inactive','Bannir comptes inactifs'),
+        ('inject_demo','Injecter faux matchs demo'),
+        ('delete_test_matches','Supprimer matchs test'),
+        ('maintenance_on','Maintenance ON'),
+        ('maintenance_off','Maintenance OFF')
+    ] %}
+        <form class="god-card" method="post" data-confirm="Action God Mode irréversible ou sensible. Confirmer ?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="{{ action }}">
+            <strong>{{ label }}</strong>
+            {% if action == 'global_notif' %}<input name="message" placeholder="Message global">{% endif %}
+            <input name="confirm" placeholder="GODMODE">
+            <button class="primary-btn" type="submit">Exécuter</button>
+        </form>
+    {% endfor %}
+    <form class="god-card" method="post" data-confirm="Donner le badge Champion ?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="champion_badge">
+        <strong>Donner badge Champion</strong>
+        <select name="user_id">{% for user in users %}<option value="{{ user.id }}">{{ user.pseudo }}</option>{% endfor %}</select>
+        <input name="confirm" placeholder="GODMODE">
+        <button class="primary-btn" type="submit">Exécuter</button>
+    </form>
+</section>
+{% endblock %}

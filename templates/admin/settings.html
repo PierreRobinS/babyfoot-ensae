@@ -1,0 +1,27 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Paramètres{% endblock %}
+{% block admin_title %}Paramètres{% endblock %}
+
+{% block admin_content %}
+<section class="panel reveal">
+    <form method="post" class="settings-grid">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for key, label in [
+            ('glicko_tau','Glicko tau'),
+            ('glicko_default_rd','RD initial'),
+            ('glicko_default_volatility','Volatility initiale'),
+            ('invitation_timeout_1v1','Réponse 1v1 secondes'),
+            ('invitation_timeout_2v2','Réponse 2v2 secondes'),
+            ('auto_ban_hours','Bans auto heures'),
+            ('registrations_enabled','Inscriptions'),
+            ('maintenance_enabled','Maintenance'),
+            ('maintenance_message','Message maintenance'),
+            ('global_banner','Bannière globale'),
+            ('theme_color','Thème')
+        ] %}
+            <label>{{ label }}<input name="{{ key }}" value="{{ settings.get(key, '') }}"></label>
+        {% endfor %}
+        <button class="primary-btn" type="submit">Enregistrer</button>
+    </form>
+</section>
+{% endblock %}

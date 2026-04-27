@@ -1,0 +1,57 @@
+{% extends "admin/layout.html" %}
+{% block title %}Admin · Litiges{% endblock %}
+{% block admin_title %}Litiges{% endblock %}
+
+{% block admin_content %}
+<section class="admin-card-list reveal">
+    {% for match in matches %}
+        <article class="admin-card">
+            <header><span><strong>#{{ match.id }} · {{ match.mode }}</strong><small>{{ match.team_label('A') }} vs {{ match.team_label('B') }}</small></span><b>{{ match.status }}</b></header>
+            <div class="admin-meta">
+                {% for p in match.participants %}
+                    <span>{{ p.user.pseudo }} <strong>{{ p.validation_status }}</strong></span>
+                {% endfor %}
+            </div>
+            <form method="post" action="{{ url_for('admin.dispute_action', match_id=match.id) }}" class="admin-actions">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="decide">
+                <input name="score_a" type="number" min="0" max="10" value="{{ match.score_a or 10 }}">
+                <input name="score_b" type="number" min="0" max="10" value="{{ match.score_b or 8 }}">
+                <button class="primary-btn" type="submit">Trancher</button>
+            </form>
+            <div class="admin-button-grid">
+                <form method="post" action="{{ url_for('admin.dispute_action', match_id=match.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="warn">
+                    <input name="message" placeholder="Message avertissement">
+                    <button class="secondary-btn" type="submit">Avertir</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.dispute_action', match_id=match.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="blacklist">
+                    <input name="hours" type="number" value="24">
+                    <button class="secondary-btn danger" type="submit">Blacklist paire</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.dispute_action', match_id=match.id) }}" data-confirm="Annuler ce litige ?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="cancel">
+                    <button class="secondary-btn danger" type="submit">Annuler</button>
+                </form>
+            </div>
+        </article>
+    {% else %}
+        <div class="empty-state">Aucun litige ouvert.</div>
+    {% endfor %}
+</section>
+
+<section class="panel reveal">
+    <h2>Historique litiges</h2>
+    <div class="compact-list">
+        {% for dispute in disputes %}
+            <span><b>#{{ dispute.match_id }}</b> {{ dispute.created_at.strftime('%d/%m %H:%M') }} · {{ dispute.triggered_by.pseudo }} · compteur {{ dispute.count_after }}</span>
+        {% else %}
+            <div class="empty-state">Aucun litige enregistré.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

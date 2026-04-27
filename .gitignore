@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/
+*.log
+static/uploads/*
+!static/uploads/.gitkeep

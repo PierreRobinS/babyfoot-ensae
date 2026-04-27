@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="admin-hero reveal">
+    <div>
+        <p class="eyebrow">God Mode</p>
+        <h1>{% block admin_title %}Admin{% endblock %}</h1>
+        <p class="hero-copy">Contrôle central de la plateforme babyfoot.</p>
+    </div>
+    <a class="god-link" href="{{ url_for('admin.god') }}">God</a>
+</section>
+
+<nav class="admin-tabs reveal" aria-label="Admin">
+    {% for label, endpoint in admin_tabs %}
+        <a class="{% if request.endpoint == endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}">{{ label }}</a>
+    {% endfor %}
+</nav>
+
+{% block admin_content %}{% endblock %}
+{% endblock %}
