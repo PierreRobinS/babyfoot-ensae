@@ -362,6 +362,13 @@ function setupLiveGame() {
     let dragDelta = 0;
     let busy = false;
 
+    function setDigitStyle(element, transform, opacity, transition = "none") {
+        if (!element) return;
+        element.style.transition = transition;
+        element.style.transform = transform;
+        element.style.opacity = opacity;
+    }
+
     function previewScore(deltaY) {
         const direction = deltaY > 0 ? 1 : -1;
         return Math.min(10, score + direction);
@@ -369,46 +376,52 @@ function setupLiveGame() {
 
     function resetDrag() {
         dragDelta = 0;
-        stage?.style.setProperty("--drag-offset", "0px");
-        stage?.style.setProperty("--preview-offset", "0px");
-        stage?.style.setProperty("--preview-opacity", "0");
-        stage?.style.setProperty("--current-opacity", "1");
-        stage?.style.setProperty("--current-scale", "1");
-        stage?.style.setProperty("--preview-scale", "0.96");
-        stage?.classList.remove("dragging", "commit-up", "commit-down");
+        stage?.classList.remove("dragging");
+        setDigitStyle(digit, "translateY(0) scale(1)", "1", "transform 160ms ease-out, opacity 160ms ease-out");
+        setDigitStyle(preview, "translateY(0) scale(0.96)", "0", "transform 160ms ease-out, opacity 160ms ease-out");
     }
 
     function updateDrag(deltaY) {
         dragDelta = deltaY;
-        const clamped = Math.max(-92, Math.min(92, deltaY));
         const progress = Math.min(1, Math.abs(deltaY) / 92);
         const direction = deltaY > 0 ? 1 : -1;
         if (preview) preview.textContent = String(previewScore(deltaY));
         stage?.classList.add("dragging");
-        stage?.style.setProperty("--drag-offset", `${direction * 92 * progress}px`);
-        stage?.style.setProperty("--preview-offset", `${direction * -92 * (1 - progress)}px`);
-        stage?.style.setProperty("--preview-opacity", String(progress));
-        stage?.style.setProperty("--current-opacity", String(1 - progress));
-        stage?.style.setProperty("--current-scale", String(1 - progress * 0.04));
-        stage?.style.setProperty("--preview-scale", String(0.96 + progress * 0.04));
+        setDigitStyle(
+            digit,
+            `translateY(${direction * 92 * progress}px) scale(${1 - progress * 0.04})`,
+            String(1 - progress)
+        );
+        setDigitStyle(
+            preview,
+            `translateY(${direction * -92 * (1 - progress)}px) scale(${0.96 + progress * 0.04})`,
+            String(progress)
+        );
     }
 
     function renderScore(nextScore, direction = 0) {
-        resetDrag();
         if (nextScore === score) return;
         score = nextScore;
-        digit.textContent = String(score);
-        if (preview) preview.textContent = String(score);
-        stage?.classList.remove("commit-up", "commit-down");
-        if (direction === 0) return;
-        void stage?.offsetWidth;
-        stage?.classList.add(direction > 0 ? "commit-down" : "commit-up");
-    }
+        stage?.classList.remove("dragging");
+        digit.textContent = String(nextScore);
+        if (preview) preview.textContent = String(nextScore);
 
-    stage?.addEventListener("animationend", (event) => {
-        if (event.target !== digit) return;
-        stage.classList.remove("commit-up", "commit-down");
-    });
+        if (direction !== 0) {
+            setDigitStyle(digit, `translateY(${direction * -42}px) scale(0.96)`, "0.22", "none");
+            setDigitStyle(preview, "translateY(0) scale(0.96)", "0", "none");
+            window.requestAnimationFrame(() => {
+                setDigitStyle(
+                    digit,
+                    "translateY(0) scale(1)",
+                    "1",
+                    "transform 340ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease-out"
+                );
+            });
+            return;
+        }
+
+        resetDrag();
+    }
 
     async function changeScore(delta) {
         if (busy) return;

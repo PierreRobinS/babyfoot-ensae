@@ -1305,12 +1305,6 @@ select:focus {
 }
 
 .score-stage {
-    --drag-offset: 0px;
-    --preview-offset: 0px;
-    --preview-opacity: 0;
-    --current-opacity: 1;
-    --current-scale: 1;
-    --preview-scale: 0.96;
     position: relative;
     display: grid;
     min-height: 310px;
@@ -1332,14 +1326,14 @@ select:focus {
 }
 
 .score-digit-current {
-    opacity: var(--current-opacity);
-    transform: translateY(var(--drag-offset)) scale(var(--current-scale));
+    opacity: 1;
+    transform: translateY(0) scale(1);
     transition: transform 0.18s ease-out, opacity 0.18s ease-out;
 }
 
 .score-digit-preview {
-    opacity: var(--preview-opacity);
-    transform: translateY(var(--preview-offset)) scale(var(--preview-scale));
+    opacity: 0;
+    transform: translateY(0) scale(0.96);
     transition: transform 0.12s ease-out, opacity 0.12s ease-out;
     pointer-events: none;
     filter: blur(0.2px);
@@ -1358,44 +1352,6 @@ select:focus {
 .live-game.red .score-digit {
     color: var(--red);
     text-shadow: 0 18px 42px rgba(212, 82, 82, 0.14);
-}
-
-.score-stage.commit-down .score-digit-current {
-    animation: scoreCommitDown 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.score-stage.commit-up .score-digit-current {
-    animation: scoreCommitUp 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes scoreCommitDown {
-    0% {
-        transform: translateY(-42px) scale(0.96);
-        opacity: 0.22;
-    }
-    55% {
-        transform: translateY(7px) scale(1.02);
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-}
-
-@keyframes scoreCommitUp {
-    0% {
-        transform: translateY(42px) scale(0.96);
-        opacity: 0.22;
-    }
-    55% {
-        transform: translateY(-7px) scale(1.02);
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
 }
 
 .swipe-hint {
