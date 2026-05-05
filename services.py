@@ -222,9 +222,7 @@ def parse_score(score_a, score_b):
     except (TypeError, ValueError):
         return None, None, "Scores invalides."
 
-    if a < 0 or b < 0:
-        return None, None, "Les scores doivent être positifs."
-    if not ((a == 10 and 0 <= b < 10) or (b == 10 and 0 <= a < 10)):
+    if not ((a == 10 and b < 10) or (b == 10 and a < 10)):
         return None, None, "Score babyfoot obligatoire: 10-k ou k-10."
     return a, b, None
 
@@ -325,6 +323,33 @@ def active_matches_for(user):
         .order_by(Match.started_at.desc().nullslast(), Match.created_at.desc())
         .all()
     )
+
+
+def active_match_for(user_id):
+    return (
+        Match.query.join(MatchParticipant)
+        .filter(Match.status == "active", MatchParticipant.user_id == user_id)
+        .order_by(Match.started_at.desc().nullslast(), Match.created_at.desc())
+        .first()
+    )
+
+
+def users_in_active_game(user_ids):
+    ids = list(dict.fromkeys(user_ids))
+    if not ids:
+        return []
+
+    busy_ids = {
+        participant.user_id
+        for participant in MatchParticipant.query.join(Match)
+        .filter(Match.status == "active", MatchParticipant.user_id.in_(ids))
+        .all()
+    }
+    if not busy_ids:
+        return []
+
+    users_by_id = {user.id: user for user in User.query.filter(User.id.in_(busy_ids)).all()}
+    return [users_by_id[user_id] for user_id in ids if user_id in users_by_id]
 
 
 def public_events(limit=8):

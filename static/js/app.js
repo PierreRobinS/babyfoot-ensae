@@ -19,7 +19,7 @@ function showToast(message, type = "success") {
     root.appendChild(toast);
     window.setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transform = "translateY(8px)";
+        toast.style.transform = "translateY(-8px)";
         window.setTimeout(() => toast.remove(), 220);
     }, 3600);
 }
@@ -44,7 +44,7 @@ function setupExistingToasts() {
     $$(".toast").forEach((toast, index) => {
         window.setTimeout(() => {
             toast.style.opacity = "0";
-            toast.style.transform = "translateY(8px)";
+            toast.style.transform = "translateY(-8px)";
             window.setTimeout(() => toast.remove(), 220);
         }, 3600 + index * 450);
     });
@@ -104,7 +104,7 @@ function setupAutocomplete() {
                 ? users.map((user) => `
                     <button type="button" data-user-id="${user.id}" data-user-label="${escapeHtml(user.pseudo)}">
                         <img src="${escapeHtml(user.avatar)}" alt="">
-                        <span><strong>${escapeHtml(user.pseudo)}</strong><small>${escapeHtml(user.name)} · ${escapeHtml(user.email)}</small></span>
+                        <span><strong>${escapeHtml(user.pseudo)}</strong><small>${escapeHtml(user.name)} - ${escapeHtml(user.email)}</small></span>
                         <small>${user.rating_1v1}</small>
                     </button>
                 `).join("")
@@ -176,7 +176,7 @@ function renderPrediction(card, data) {
         return;
     }
     const prediction = data.prediction;
-    const banLine = data.ban ? `<small>Match bloqué jusqu'au ${escapeHtml(data.ban_until)}.</small>` : "";
+    const banLine = data.ban ? `<small>Match bloque jusqu'au ${escapeHtml(data.ban_until)}.</small>` : "";
     card.innerHTML = `${escapeHtml(prediction.text)}<small>Score attendu: ${escapeHtml(prediction.score)}</small>${banLine}`;
     card.classList.remove("hidden");
 }
@@ -191,6 +191,10 @@ function setupChallengeForms() {
                 body: JSON.stringify(payload),
             });
             showToast(data.message, data.ok ? "success" : "error");
+            if (data.redirect && !data.ok) {
+                window.location.href = data.redirect;
+                return;
+            }
             if (data.ok) {
                 form.reset();
                 $$("[data-player-id]", form).forEach((input) => {
@@ -244,20 +248,27 @@ function renderDashboard(payload) {
     const pending = $("#pending-list");
     const active = $("#active-list");
     const events = $("#event-list");
-    if (!pending || !active || !events) return;
 
-    pending.innerHTML = payload.pending_invitations.length
-        ? payload.pending_invitations.map(invitationCard).join("")
-        : `<div class="empty-state">Aucune invitation.</div>`;
-    active.innerHTML = payload.active_matches.length
-        ? payload.active_matches.map(matchCard).join("")
-        : `<div class="empty-state">Aucun match ouvert.</div>`;
-    events.innerHTML = payload.events.length
-        ? payload.events.map(eventCard).join("")
-        : `<div class="empty-state">Rien à signaler.</div>`;
+    if (pending) {
+        pending.innerHTML = payload.pending_invitations.length
+            ? payload.pending_invitations.map(invitationCard).join("")
+            : `<div class="empty-state">Aucune invitation.</div>`;
+    }
+    if (active) {
+        active.innerHTML = payload.active_matches.length
+            ? payload.active_matches.map(matchCard).join("")
+            : `<div class="empty-state">Aucun match ouvert.</div>`;
+    }
+    if (events) {
+        events.innerHTML = payload.events.length
+            ? payload.events.map(eventCard).join("")
+            : `<div class="empty-state">Rien a signaler.</div>`;
+    }
 
-    $("#pending-count").textContent = payload.pending_invitations.length;
-    $("#active-count").textContent = payload.active_matches.length;
+    const pendingCount = $("#pending-count");
+    const activeCount = $("#active-count");
+    if (pendingCount) pendingCount.textContent = payload.pending_invitations.length;
+    if (activeCount) activeCount.textContent = payload.active_matches.length;
     renderChallengeNotification(payload.pending_invitations);
     maybeAutoEnterActiveMatch(payload.active_matches);
 }
@@ -293,12 +304,16 @@ function maybeAutoEnterActiveMatch(matches) {
     sessionStorage.setItem(key, "1");
     window.setTimeout(() => {
         window.location.href = active.href;
-    }, 700);
+    }, 500);
 }
 
 async function pollDashboard() {
     if (!$("[data-dashboard]")) return;
     const payload = await fetch("/api/home-state", { credentials: "same-origin" }).then((response) => response.json());
+    if (payload.redirect) {
+        window.location.href = payload.redirect;
+        return;
+    }
     renderDashboard(payload);
 }
 
@@ -312,7 +327,7 @@ function setupInvitationActions() {
             body: JSON.stringify({ action: button.dataset.action }),
         });
         showToast(data.message, data.ok ? "success" : "error");
-        if (data.ok && data.redirect && button.dataset.action === "accept") {
+        if (data.redirect && (data.ok || button.dataset.action === "accept")) {
             window.location.href = data.redirect;
             return;
         }
@@ -350,6 +365,7 @@ function setupLiveGame() {
         score = nextScore;
         digit.textContent = String(score);
         wheel.classList.remove("roll-up", "roll-down");
+        if (direction === 0) return;
         void wheel.offsetWidth;
         wheel.classList.add(direction > 0 ? "roll-down" : "roll-up");
     }
@@ -369,10 +385,10 @@ function setupLiveGame() {
         }
         renderScore(data.own_score, delta);
         if (data.finished && data.redirect) {
-            showToast("Premier à 10. Validation du score.", "success");
+            showToast("Premier a 10. Validation du score.", "success");
             window.setTimeout(() => {
                 window.location.href = data.redirect;
-            }, 700);
+            }, 500);
         }
     }
 
@@ -389,10 +405,6 @@ function setupLiveGame() {
         changeScore(deltaY > 0 ? 1 : -1);
     }, { passive: true });
 
-    $$("[data-score-delta]", game).forEach((button) => {
-        button.addEventListener("click", () => changeScore(Number(button.dataset.scoreDelta)));
-    });
-
     window.setInterval(async () => {
         const response = await fetch(`/matches/${matchId}/live-state`, { credentials: "same-origin" });
         if (!response.ok) return;
@@ -403,6 +415,27 @@ function setupLiveGame() {
         }
         renderScore(data.own_score, 0);
     }, 1800);
+}
+
+function setupMatchDetailPolling() {
+    const detail = $("[data-match-detail]");
+    if (!detail) return;
+    const matchId = detail.dataset.matchId;
+    let reloadKey = detail.dataset.reloadKey || "";
+
+    window.setInterval(async () => {
+        const response = await fetch(`/matches/${matchId}/state`, { credentials: "same-origin" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.redirect && data.redirect !== window.location.pathname) {
+            window.location.href = data.redirect;
+            return;
+        }
+        if (data.reload_key && data.reload_key !== reloadKey) {
+            reloadKey = data.reload_key;
+            window.location.reload();
+        }
+    }, 1600);
 }
 
 function setupConfirmations() {
@@ -424,6 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupInvitationActions();
     setupChrono();
     setupLiveGame();
+    setupMatchDetailPolling();
     setupConfirmations();
 
     document.addEventListener("player:selected", updatePredictions);

@@ -40,6 +40,16 @@ def my_profile():
     return redirect(url_for("profiles.profile", user_id=current_user.id))
 
 
+@profiles_bp.route("/menu")
+@login_required
+def menu():
+    return render_template(
+        "menu.html",
+        history_1v1=match_history_for(current_user, "1v1"),
+        history_2v2=match_history_for(current_user, "2v2"),
+    )
+
+
 @profiles_bp.route("/profile/<int:user_id>", methods=["GET", "POST"])
 @login_required
 def profile(user_id):

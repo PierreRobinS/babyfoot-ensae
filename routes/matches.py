@@ -18,6 +18,7 @@ from services import (
     register_disagreement,
     score_label,
     setup_group_key,
+    users_in_active_game,
 )
 
 
@@ -42,6 +43,38 @@ def _participant_or_403(match):
     return participant
 
 
+def _busy_players_reply(user_ids):
+    busy_users = users_in_active_game(user_ids)
+    if not busy_users:
+        return None
+
+    names = ", ".join(user.pseudo for user in busy_users)
+    suffix = "est déjà en partie" if len(busy_users) == 1 else "sont déjà en partie"
+    return _reply(False, f"{names} {suffix}.", 409)
+
+
+def _match_reload_key(match, participant):
+    participant_states = ",".join(
+        f"{item.user_id}:{item.validation_status}:{item.invitation_status}"
+        for item in match.participants
+    )
+    return "|".join(
+        str(value)
+        for value in (
+            match.status,
+            match.score_a,
+            match.score_b,
+            match.live_score_a,
+            match.live_score_b,
+            match.proposal_round,
+            participant.validation_status,
+            participant.invitation_status,
+            participant_states,
+            match.public_note,
+        )
+    )
+
+
 @matches_bp.route("/create_1v1", methods=["POST"])
 @login_required
 def create_1v1():
@@ -54,6 +87,10 @@ def create_1v1():
     opponent = db.session.get(User, opponent_id)
     if not opponent or opponent.id == current_user.id:
         return _reply(False, "Adversaire invalide.", 400)
+
+    busy_reply = _busy_players_reply([current_user.id, opponent.id])
+    if busy_reply:
+        return busy_reply
 
     group_key = setup_group_key("1v1", [current_user.id], [opponent.id])
     ban = active_ban("1v1", group_key)
@@ -119,6 +156,10 @@ def create_2v2():
     ids = {current_user.id, partner.id, opponent_1.id, opponent_2.id}
     if len(ids) != 4:
         return _reply(False, "Un joueur apparaît plusieurs fois.", 400)
+
+    busy_reply = _busy_players_reply(list(ids))
+    if busy_reply:
+        return busy_reply
 
     group_key = setup_group_key(
         "2v2", [current_user.id, partner.id], [opponent_1.id, opponent_2.id]
@@ -186,6 +227,7 @@ def match_detail(match_id):
         prediction=prediction,
         score_label=score_label(match),
         max_proposals=max_score_proposals(match.mode),
+        reload_key=_match_reload_key(match, participant),
     )
 
 
@@ -213,6 +255,10 @@ def answer_invitation(match_id):
 
     if action != "accept":
         return _reply(False, "Action invalide.", 400)
+
+    busy_reply = _busy_players_reply([item.user_id for item in match.participants])
+    if busy_reply:
+        return busy_reply
 
     participant.invitation_status = "accepted"
     if match.accepted_invitations():
@@ -280,7 +326,7 @@ def update_live_score(match_id):
 
     field = "live_score_a" if participant.team == "A" else "live_score_b"
     current_score = getattr(match, field) or 0
-    setattr(match, field, max(0, min(10, current_score + delta)))
+    setattr(match, field, min(10, current_score + delta))
 
     finished = match.live_score_a == 10 or match.live_score_b == 10
     redirect_to = None
@@ -317,6 +363,36 @@ def live_state(match_id):
             "redirect": url_for("matches.match_detail", match_id=match.id)
             if match.status != "active"
             else None,
+        }
+    )
+
+
+@matches_bp.route("/<int:match_id>/state")
+@login_required
+def match_state(match_id):
+    expire_matches()
+    match = Match.query.get_or_404(match_id)
+    participant = _participant_or_403(match)
+    redirect_to = None
+    if match.status == "active":
+        redirect_to = url_for("matches.play_match", match_id=match.id)
+    elif match.status in {
+        "pending_validation",
+        "pending_cancellation",
+        "disputed",
+        "completed",
+        "cancelled",
+    }:
+        redirect_to = url_for("matches.match_detail", match_id=match.id)
+
+    return jsonify(
+        {
+            "ok": True,
+            "status": match.status,
+            "participant_status": participant.validation_status,
+            "score": score_label(match),
+            "reload_key": _match_reload_key(match, participant),
+            "redirect": redirect_to,
         }
     )
 

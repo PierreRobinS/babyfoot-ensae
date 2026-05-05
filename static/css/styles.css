@@ -1,16 +1,16 @@
 :root {
-    --cream: #fbf2e6;
-    --paper: #fffaf1;
-    --wood: #8c5b35;
-    --wood-dark: #4f3423;
-    --green: #1f6f4a;
-    --green-soft: #e0efe4;
-    --red: #c9573b;
-    --blue: #315f9d;
-    --ink: #211b16;
-    --muted: #7c6b5b;
-    --line: rgba(79, 52, 35, 0.14);
-    --shadow: 0 18px 42px rgba(79, 52, 35, 0.16);
+    --cream: #f4f7fb;
+    --paper: #ffffff;
+    --wood: #667085;
+    --wood-dark: #111827;
+    --green: #0f8b6d;
+    --green-soft: #e7f6f0;
+    --red: #d45252;
+    --blue: #276ef1;
+    --ink: #111827;
+    --muted: #697386;
+    --line: rgba(17, 24, 39, 0.1);
+    --shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
     --radius: 8px;
 }
 
@@ -28,8 +28,8 @@ body {
     color: var(--ink);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background:
-        linear-gradient(180deg, rgba(31, 111, 74, 0.1), transparent 260px),
-        repeating-linear-gradient(90deg, rgba(140, 91, 53, 0.035) 0 18px, rgba(255, 250, 241, 0.03) 18px 36px),
+        linear-gradient(180deg, rgba(39, 110, 241, 0.1), transparent 300px),
+        repeating-linear-gradient(90deg, rgba(15, 139, 109, 0.035) 0 18px, rgba(255, 255, 255, 0.04) 18px 36px),
         var(--cream);
     letter-spacing: 0;
 }
@@ -1441,5 +1441,347 @@ select:focus {
 
     .settings-grid button {
         grid-column: 1 / -1;
+    }
+}
+
+.no-page-scroll {
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.no-page-scroll .app-shell {
+    height: 100dvh;
+    min-height: 0;
+    padding-bottom: 84px;
+}
+
+.no-bottom-nav .app-shell {
+    padding-bottom: 0;
+}
+
+.no-bottom-nav .bottom-nav {
+    display: none;
+}
+
+.no-page-scroll .page {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.home-screen .page,
+.menu-screen .page,
+.match-screen .page {
+    height: calc(100dvh - 84px);
+    padding: 12px;
+}
+
+.home-page,
+.menu-page,
+.match-page {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.home-page {
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.home-hero {
+    min-height: 82px;
+    padding: 12px;
+}
+
+.home-id {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.home-id img {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    object-fit: cover;
+}
+
+.home-id small,
+.home-id strong {
+    display: block;
+}
+
+.home-id small {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.home-id strong {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 1.2rem;
+    font-weight: 1000;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-screen .rating-rings span {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+}
+
+.home-screen .rating-rings strong {
+    font-size: 0.95rem;
+}
+
+.home-challenge {
+    min-height: 0;
+    overflow: visible;
+    align-content: start;
+}
+
+.home-screen .challenge-form {
+    gap: 10px;
+}
+
+.home-screen label {
+    gap: 5px;
+    font-size: 0.78rem;
+}
+
+.home-screen input {
+    min-height: 42px;
+    padding: 9px 11px;
+}
+
+.home-screen .primary-btn,
+.home-screen .secondary-btn {
+    min-height: 44px;
+}
+
+.home-screen .prediction-card {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+}
+
+.home-screen .suggestions {
+    max-height: 42dvh;
+}
+
+.bottom-nav {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(3, 1fr);
+    border-radius: 20px;
+}
+
+.bottom-nav a {
+    min-height: 48px;
+}
+
+.toast-root {
+    top: 12px;
+    bottom: auto;
+    z-index: 120;
+}
+
+.toast {
+    animation: toastDrop 0.24s ease both;
+}
+
+.challenge-notification-root {
+    top: 70px;
+}
+
+.live-screen .page {
+    height: 100dvh;
+    padding: 0;
+}
+
+.live-game {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 14px 12px calc(88px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.score-wheel {
+    min-height: 0;
+    height: 100%;
+}
+
+.score-digit {
+    font-size: clamp(7rem, 45dvw, 13rem);
+}
+
+.swipe-hint {
+    min-height: 58px;
+}
+
+.floating-stop-form {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 60;
+}
+
+.floating-stop-form .stop-match-btn {
+    width: min(100%, 680px);
+    margin: 0 auto;
+    box-shadow: 0 18px 44px rgba(212, 82, 82, 0.18);
+}
+
+.match-page {
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.match-page .match-hero,
+.match-action-panel {
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.match-action-panel {
+    min-height: 0;
+    overflow: hidden;
+    align-content: start;
+}
+
+.match-page .delta-grid {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.match-page .versus-board > div {
+    padding: 10px;
+}
+
+.match-page .versus-score {
+    min-width: 44px;
+    height: 44px;
+}
+
+.menu-page {
+    grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.menu-head {
+    padding: 12px;
+}
+
+.menu-actions {
+    display: grid;
+    gap: 8px;
+}
+
+.full-width-btn {
+    width: 100%;
+}
+
+.menu-history {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.menu-history-grid {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.menu-history-grid > div {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
+    overflow: hidden;
+}
+
+.menu-history h3 {
+    font-size: 0.86rem;
+}
+
+.compact-history {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.compact-history .history-card {
+    min-height: 0;
+    padding: 9px 10px;
+}
+
+.compact-history .history-card small,
+.compact-history .history-card span {
+    font-size: 0.72rem;
+}
+
+.compact-history .history-card strong {
+    font-size: 0.84rem;
+}
+
+@keyframes toastDrop {
+    from {
+        transform: translateY(-8px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-height: 720px) {
+    .home-screen .page,
+    .menu-screen .page,
+    .match-screen .page {
+        padding: 8px;
+    }
+
+    .home-page,
+    .menu-page,
+    .match-page {
+        gap: 8px;
+    }
+
+    .home-hero {
+        min-height: 72px;
+    }
+
+    .home-screen .rating-rings span {
+        width: 50px;
+        height: 50px;
+        font-size: 0.66rem;
+    }
+
+    .panel,
+    .match-hero,
+    .profile-head,
+    .hero-panel {
+        padding: 12px;
+    }
+
+    .home-screen input {
+        min-height: 38px;
+    }
+
+    .home-screen .primary-btn,
+    .home-screen .secondary-btn {
+        min-height: 40px;
+    }
+
+    .swipe-hint p {
+        display: none;
     }
 }

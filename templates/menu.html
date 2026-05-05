@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Menu - Babyfoot ENSAE{% endblock %}
+{% block body_class %}menu-screen no-page-scroll{% endblock %}
+
+{% block content %}
+<div class="menu-page reveal">
+    <section class="profile-head menu-head">
+        <img class="profile-photo" src="{{ current_user.avatar_url }}" alt="">
+        <div>
+            <h1>{{ current_user.pseudo }}</h1>
+            <p>{{ current_user.email }}</p>
+        </div>
+    </section>
+
+    <div class="menu-actions">
+        <a class="primary-btn full-width-btn" href="{{ url_for('profiles.profile', user_id=current_user.id) }}">Modifier le profil</a>
+        {% if current_user.is_admin %}
+            <a class="secondary-btn full-width-btn" href="{{ url_for('admin.dashboard') }}">Administration</a>
+        {% endif %}
+    </div>
+
+    <section class="panel menu-history">
+        <div class="section-head">
+            <h2>Historiques</h2>
+            <a class="text-link" href="{{ url_for('profiles.match_history', user_id=current_user.id) }}">Tout</a>
+        </div>
+        <div class="menu-history-grid">
+            <div>
+                <h3>1v1</h3>
+                <div class="history-list compact-history">
+                    {% for item in history_1v1[:4] %}
+                        {% include "_history_card.html" %}
+                    {% else %}
+                        <div class="empty-state">Aucun match 1v1.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <h3>2v2</h3>
+                <div class="history-list compact-history">
+                    {% for item in history_2v2[:4] %}
+                        {% include "_history_card.html" %}
+                    {% else %}
+                        <div class="empty-state">Aucun match 2v2.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

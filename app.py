@@ -1,6 +1,11 @@
 import sys
 from pathlib import Path
 
+if __name__ == "__main__" or __name__ == "app":
+    project_dir = str(Path(__file__).resolve().parent)
+    if sys.path[0] != project_dir:
+        sys.path.insert(0, project_dir)
+
 from flask import Flask, request
 from flask_login import current_user
 
@@ -11,8 +16,15 @@ from routes import admin_bp, auth_bp, main_bp, matches_bp, profiles_bp, rankings
 from security import csrf_token, validate_csrf
 
 
+BASE_DIR = Path(__file__).resolve().parent
+
+
 def create_app():
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder=str(BASE_DIR / "templates"),
+        static_folder=str(BASE_DIR / "static"),
+    )
     app.config.from_object(Config)
 
     Path(Config.DATA_DIR).mkdir(parents=True, exist_ok=True)
@@ -66,9 +78,32 @@ def create_app():
                     message = SiteSetting.query.filter_by(key="maintenance_message").first()
                     flash((message.value if message else None) or "Maintenance en cours.", "error")
                     return redirect(url_for("auth.login"))
-        from services import expire_matches
+        from services import active_match_for, expire_matches
 
         expire_matches()
+        if current_user.is_authenticated:
+            active_match = active_match_for(current_user.id)
+            if active_match:
+                allowed_endpoints = {
+                    "auth.logout",
+                    "matches.play_match",
+                    "matches.update_live_score",
+                    "matches.live_state",
+                    "matches.match_state",
+                    "matches.request_stop",
+                }
+                is_allowed = request.endpoint in allowed_endpoints
+                if request.endpoint and request.endpoint.startswith("static"):
+                    is_allowed = True
+                if request.view_args and request.view_args.get("match_id") != active_match.id:
+                    is_allowed = False
+                if not is_allowed:
+                    from flask import jsonify, redirect, url_for
+
+                    redirect_to = url_for("matches.play_match", match_id=active_match.id)
+                    if request.is_json or (request.endpoint and request.endpoint.startswith("main.api")):
+                        return jsonify({"ok": False, "message": "Partie en cours.", "redirect": redirect_to}), 409
+                    return redirect(redirect_to)
 
     with app.app_context():
         from admin_bootstrap import bootstrap_admin_system

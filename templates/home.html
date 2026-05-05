@@ -1,29 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Accueil · Babyfoot ENSAE{% endblock %}
+{% block title %}Accueil - Babyfoot ENSAE{% endblock %}
+{% block body_class %}home-screen no-page-scroll{% endblock %}
 
 {% block content %}
 <div class="home-page" data-dashboard>
-    <section class="hero-panel reveal">
-        <div>
-            <p class="eyebrow">Club babyfoot</p>
-            <h1>Salut {{ current_user.pseudo }}</h1>
-            <p class="hero-copy">1v1: {{ current_user.rating_1v1|round|int }} · 2v2: {{ current_user.rating_2v2|round|int }}</p>
+    <section class="hero-panel home-hero reveal">
+        <div class="home-id">
+            <img src="{{ current_user.avatar_url }}" alt="">
+            <span>
+                <small>Babyfoot ENSAE</small>
+                <strong>{{ current_user.pseudo }}</strong>
+            </span>
         </div>
         <div class="rating-rings">
-            <span>1v1<br><strong>{{ current_user.matches_1v1 }}</strong></span>
-            <span>2v2<br><strong>{{ current_user.matches_2v2 }}</strong></span>
+            <span>1v1<br><strong>{{ current_user.rating_1v1|round|int }}</strong></span>
+            <span>2v2<br><strong>{{ current_user.rating_2v2|round|int }}</strong></span>
         </div>
     </section>
 
-    <section class="panel reveal">
-        <div class="section-head">
-            <h2>Invitations</h2>
-            <span class="soft-badge" id="pending-count">0</span>
-        </div>
-        <div id="pending-list" class="card-list"></div>
-    </section>
-
-    <section class="panel reveal">
+    <section class="panel home-challenge reveal">
         <div class="section-head">
             <h2>Partie</h2>
             <div class="segmented" data-mode-switch>
@@ -40,7 +35,7 @@
                 <div class="suggestions" data-suggestions></div>
             </div>
             <div class="prediction-card hidden" data-prediction="1v1"></div>
-            <button class="primary-btn" type="submit">Défier</button>
+            <button class="primary-btn" type="submit">Defier</button>
         </form>
 
         <form class="challenge-form" id="challenge-two" action="{{ url_for('matches.create_2v2') }}" method="post" data-challenge-form data-mode="2v2">
@@ -51,13 +46,13 @@
                 <div class="suggestions" data-suggestions></div>
             </div>
             <div class="autocomplete" data-autocomplete>
-                <label>Équipe adverse · joueur 1</label>
+                <label>Adverse 1</label>
                 <input type="text" placeholder="Pseudo, nom ou email" autocomplete="off">
                 <input type="hidden" name="opponent1_id" data-player-id data-role="opponent1">
                 <div class="suggestions" data-suggestions></div>
             </div>
             <div class="autocomplete" data-autocomplete>
-                <label>Équipe adverse · joueur 2</label>
+                <label>Adverse 2</label>
                 <input type="text" placeholder="Pseudo, nom ou email" autocomplete="off">
                 <input type="hidden" name="opponent2_id" data-player-id data-role="opponent2">
                 <div class="suggestions" data-suggestions></div>
@@ -65,21 +60,6 @@
             <div class="prediction-card hidden" data-prediction="2v2"></div>
             <button class="primary-btn" type="submit">Inviter</button>
         </form>
-    </section>
-
-    <section class="panel reveal">
-        <div class="section-head">
-            <h2>Matchs ouverts</h2>
-            <span class="soft-badge" id="active-count">0</span>
-        </div>
-        <div id="active-list" class="card-list"></div>
-    </section>
-
-    <section class="panel reveal">
-        <div class="section-head">
-            <h2>Événements</h2>
-        </div>
-        <div id="event-list" class="event-list"></div>
     </section>
 </div>
 

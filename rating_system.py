@@ -148,7 +148,7 @@ def _update_single_game(player, opponent, observed_score):
 
 
 def update_glicko_1v1(player_a, player_b, score_a, score_b):
-    total = score_a + score_b
+    total = max(1, score_a + score_b)
     observed_a = score_a / total
     observed_b = score_b / total
     probability_a = predict_point_probability(
@@ -172,7 +172,7 @@ def _team_rating(players):
 
 
 def update_glicko_2v2(team_a, team_b, score_a, score_b):
-    total = score_a + score_b
+    total = max(1, score_a + score_b)
     observed_a = score_a / total
     observed_b = score_b / total
 
