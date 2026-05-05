@@ -253,9 +253,9 @@ def play_match(match_id):
 
 
 def _move_to_score_validation(match, proposer):
-    match.score_a = match.live_score_a
-    match.score_b = match.live_score_b
-    match.proposal_round += 1
+    match.score_a = match.live_score_a or 0
+    match.score_b = match.live_score_b or 0
+    match.proposal_round = (match.proposal_round or 0) + 1
     match.proposed_by_id = proposer.id
     match.status = "pending_validation"
     match.public_note = None
@@ -386,7 +386,8 @@ def submit_score(match_id):
     if match.mode == "2v2" and match.host_id != current_user.id:
         return _reply(False, "Seul le host renseigne le score en 2v2.", 403, url_for("matches.match_detail", match_id=match.id))
 
-    if match.status == "disputed" and match.proposal_round >= max_score_proposals(match.mode):
+    proposal_round = match.proposal_round or 0
+    if match.status == "disputed" and proposal_round >= max_score_proposals(match.mode):
         return _reply(False, "Limite de corrections atteinte.", 400, url_for("matches.match_detail", match_id=match.id))
 
     data = _payload()
@@ -396,7 +397,7 @@ def submit_score(match_id):
 
     match.score_a = score_a
     match.score_b = score_b
-    match.proposal_round += 1
+    match.proposal_round = proposal_round + 1
     match.proposed_by_id = current_user.id
     match.status = "pending_validation"
     match.public_note = None
@@ -437,7 +438,7 @@ def validate_score(match_id):
 
     participant.validation_status = "refused"
     warning = register_disagreement(match, current_user)
-    if match.proposal_round >= max_score_proposals(match.mode):
+    if (match.proposal_round or 0) >= max_score_proposals(match.mode):
         match.status = "cancelled"
         match.cancelled_reason = "Désaccord sur le score"
         match.public_note = f"{match.mode} annulé après désaccord sur le score."

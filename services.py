@@ -107,7 +107,7 @@ def register_disagreement(match, triggered_by):
         ban = BanPair(mode=match.mode, group_key=group_key)
         db.session.add(ban)
 
-    ban.count += 1
+    ban.count = (ban.count or 0) + 1
     ban.last_match_id = match.id
     ban.updated_at = utcnow()
 
@@ -206,13 +206,13 @@ def complete_match(match):
 
 def _apply_stats(user, mode, won):
     if mode == "1v1":
-        user.matches_1v1 += 1
-        user.wins_1v1 += int(won)
-        user.losses_1v1 += int(not won)
+        user.matches_1v1 = (user.matches_1v1 or 0) + 1
+        user.wins_1v1 = (user.wins_1v1 or 0) + int(won)
+        user.losses_1v1 = (user.losses_1v1 or 0) + int(not won)
     else:
-        user.matches_2v2 += 1
-        user.wins_2v2 += int(won)
-        user.losses_2v2 += int(not won)
+        user.matches_2v2 = (user.matches_2v2 or 0) + 1
+        user.wins_2v2 = (user.wins_2v2 or 0) + int(won)
+        user.losses_2v2 = (user.losses_2v2 or 0) + int(not won)
 
 
 def parse_score(score_a, score_b):

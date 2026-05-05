@@ -18,7 +18,19 @@ USER_COLUMNS = {
 MATCH_COLUMNS = {
     "live_score_a": "INTEGER NOT NULL DEFAULT 0",
     "live_score_b": "INTEGER NOT NULL DEFAULT 0",
+    "proposal_round": "INTEGER NOT NULL DEFAULT 0",
     "stop_requested_by_id": "INTEGER",
+}
+
+NUMERIC_DEFAULT_FIXES = {
+    "match": {
+        "live_score_a": 0,
+        "live_score_b": 0,
+        "proposal_round": 0,
+    },
+    "ban_pair": {
+        "count": 0,
+    },
 }
 
 
@@ -37,6 +49,23 @@ def migrate_light_schema():
             for name, ddl in MATCH_COLUMNS.items():
                 if name not in existing:
                     connection.execute(text(f"ALTER TABLE match ADD COLUMN {name} {ddl}"))
+
+    table_names = set(inspector.get_table_names())
+    with db.engine.begin() as connection:
+        for table_name, columns in NUMERIC_DEFAULT_FIXES.items():
+            if table_name not in table_names:
+                continue
+            existing = {column["name"] for column in inspector.get_columns(table_name)}
+            for column_name, default_value in columns.items():
+                if column_name in existing:
+                    connection.execute(
+                        text(
+                            f"UPDATE {table_name} "
+                            f"SET {column_name} = :default_value "
+                            f"WHERE {column_name} IS NULL"
+                        ),
+                        {"default_value": default_value},
+                    )
 
 
 def ensure_default_settings():
