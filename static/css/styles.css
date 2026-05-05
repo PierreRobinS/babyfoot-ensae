@@ -1344,25 +1344,6 @@ select:focus {
     transition: none;
 }
 
-.score-digit-current.score-bounce {
-    animation: scoreBounce 0.34s cubic-bezier(0.2, 1.4, 0.34, 1) both;
-}
-
-@keyframes scoreBounce {
-    0% {
-        transform: translateY(0) scale(1);
-    }
-    38% {
-        transform: translateY(0) scale(1.12);
-    }
-    68% {
-        transform: translateY(0) scale(0.96);
-    }
-    100% {
-        transform: translateY(0) scale(1);
-    }
-}
-
 .live-game.blue .score-digit {
     color: var(--blue);
     text-shadow: 0 18px 42px rgba(39, 110, 241, 0.14);

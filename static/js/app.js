@@ -377,7 +377,6 @@ function setupLiveGame() {
     function resetDrag() {
         dragDelta = 0;
         stage?.classList.remove("dragging");
-        digit?.classList.remove("score-bounce");
         setDigitStyle(digit, "translateY(0) scale(1)", "1", "transform 160ms ease-out, opacity 160ms ease-out");
         setDigitStyle(preview, "translateY(0) scale(0.96)", "0", "transform 160ms ease-out, opacity 160ms ease-out");
     }
@@ -408,20 +407,13 @@ function setupLiveGame() {
         if (preview) preview.textContent = String(nextScore);
 
         if (direction !== 0) {
-            digit?.classList.remove("score-bounce");
             setDigitStyle(digit, "translateY(0) scale(1)", "1", "none");
             setDigitStyle(preview, "translateY(0) scale(0.96)", "0", "none");
-            void digit?.offsetWidth;
-            digit?.classList.add("score-bounce");
             return;
         }
 
         resetDrag();
     }
-
-    digit?.addEventListener("animationend", () => {
-        digit.classList.remove("score-bounce");
-    });
 
     async function changeScore(delta) {
         if (busy) return;
