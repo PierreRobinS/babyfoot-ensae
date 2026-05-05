@@ -375,7 +375,7 @@ function setupLiveGame() {
         stage?.style.setProperty("--current-opacity", "1");
         stage?.style.setProperty("--current-scale", "1");
         stage?.style.setProperty("--preview-scale", "0.96");
-        stage?.classList.remove("dragging");
+        stage?.classList.remove("dragging", "commit-up", "commit-down");
     }
 
     function updateDrag(deltaY) {
@@ -404,6 +404,11 @@ function setupLiveGame() {
         void stage?.offsetWidth;
         stage?.classList.add(direction > 0 ? "commit-down" : "commit-up");
     }
+
+    stage?.addEventListener("animationend", (event) => {
+        if (event.target !== digit) return;
+        stage.classList.remove("commit-up", "commit-down");
+    });
 
     async function changeScore(delta) {
         if (busy) return;
