@@ -1309,6 +1309,8 @@ select:focus {
     --preview-offset: 0px;
     --preview-opacity: 0;
     --current-opacity: 1;
+    --current-scale: 1;
+    --preview-scale: 0.96;
     position: relative;
     display: grid;
     min-height: 310px;
@@ -1331,13 +1333,13 @@ select:focus {
 
 .score-digit-current {
     opacity: var(--current-opacity);
-    transform: translateY(var(--drag-offset));
+    transform: translateY(var(--drag-offset)) scale(var(--current-scale));
     transition: transform 0.18s ease-out, opacity 0.18s ease-out;
 }
 
 .score-digit-preview {
     opacity: var(--preview-opacity);
-    transform: translateY(var(--preview-offset)) scale(0.94);
+    transform: translateY(var(--preview-offset)) scale(var(--preview-scale));
     transition: transform 0.12s ease-out, opacity 0.12s ease-out;
     pointer-events: none;
     filter: blur(0.2px);

@@ -373,6 +373,8 @@ function setupLiveGame() {
         stage?.style.setProperty("--preview-offset", "0px");
         stage?.style.setProperty("--preview-opacity", "0");
         stage?.style.setProperty("--current-opacity", "1");
+        stage?.style.setProperty("--current-scale", "1");
+        stage?.style.setProperty("--preview-scale", "0.96");
         stage?.classList.remove("dragging");
     }
 
@@ -383,10 +385,12 @@ function setupLiveGame() {
         const direction = deltaY > 0 ? 1 : -1;
         if (preview) preview.textContent = String(previewScore(deltaY));
         stage?.classList.add("dragging");
-        stage?.style.setProperty("--drag-offset", `${clamped * 0.46}px`);
-        stage?.style.setProperty("--preview-offset", `${direction * -70 + clamped * 0.36}px`);
-        stage?.style.setProperty("--preview-opacity", String(progress * 0.78));
-        stage?.style.setProperty("--current-opacity", String(1 - progress * 0.48));
+        stage?.style.setProperty("--drag-offset", `${direction * 92 * progress}px`);
+        stage?.style.setProperty("--preview-offset", `${direction * -92 * (1 - progress)}px`);
+        stage?.style.setProperty("--preview-opacity", String(progress));
+        stage?.style.setProperty("--current-opacity", String(1 - progress));
+        stage?.style.setProperty("--current-scale", String(1 - progress * 0.04));
+        stage?.style.setProperty("--preview-scale", String(0.96 + progress * 0.04));
     }
 
     function renderScore(nextScore, direction = 0) {
