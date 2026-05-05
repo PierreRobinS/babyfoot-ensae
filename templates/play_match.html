@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Partie en cours · Babyfoot ENSAE{% endblock %}
+
+{% block content %}
+<section class="live-game {{ team_color }}" data-live-game data-match-id="{{ match.id }}" data-score="{{ own_score }}">
+    <div class="live-top">
+        <span class="mode-chip">{{ match.mode }}</span>
+        <div class="chrono" data-started-at="{{ match.started_at.isoformat() }}Z">00:00</div>
+    </div>
+
+    <div class="live-team">
+        <small>Votre camp</small>
+        <strong>{{ match.team_label(participant.team) }}</strong>
+    </div>
+
+    <div class="score-wheel" data-score-wheel aria-live="polite">
+        <div class="score-digit" data-score-digit>{{ own_score }}</div>
+    </div>
+
+    <div class="swipe-hint" data-swipe-hint>
+        <div class="hint-phone">
+            <span></span>
+        </div>
+        <p>Glissez vers le bas pour monter, vers le haut pour baisser.</p>
+    </div>
+
+    <div class="live-controls">
+        <button class="secondary-btn score-tap" type="button" data-score-delta="-1">-1</button>
+        <button class="primary-btn score-tap" type="button" data-score-delta="1">+1</button>
+    </div>
+
+    <form method="post" action="{{ url_for('matches.request_stop', match_id=match.id) }}" data-confirm="Demander l'arrêt de la partie ? Tous les camps devront confirmer.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="secondary-btn danger stop-match-btn" type="submit">Arrêter la partie</button>
+    </form>
+</section>
+{% endblock %}

@@ -258,6 +258,42 @@ function renderDashboard(payload) {
 
     $("#pending-count").textContent = payload.pending_invitations.length;
     $("#active-count").textContent = payload.active_matches.length;
+    renderChallengeNotification(payload.pending_invitations);
+    maybeAutoEnterActiveMatch(payload.active_matches);
+}
+
+function renderChallengeNotification(invitations) {
+    const root = $("#challenge-notification-root");
+    if (!root) return;
+    if (!invitations.length) {
+        root.innerHTML = "";
+        return;
+    }
+    const invitation = invitations[0];
+    root.innerHTML = `
+        <article class="challenge-notification reveal">
+            <div>
+                <strong>${escapeHtml(invitation.title)}</strong>
+                <small>${escapeHtml(invitation.subtitle)}</small>
+            </div>
+            <div class="challenge-notification-actions">
+                <button class="secondary-btn js-invite" data-match-id="${invitation.id}" data-action="refuse">Refuser</button>
+                <button class="primary-btn js-invite" data-match-id="${invitation.id}" data-action="accept">Accepter</button>
+            </div>
+        </article>
+    `;
+}
+
+function maybeAutoEnterActiveMatch(matches) {
+    if (!$("[data-dashboard]")) return;
+    const active = matches.find((match) => match.status === "active");
+    if (!active) return;
+    const key = `entered-match-${active.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    window.setTimeout(() => {
+        window.location.href = active.href;
+    }, 700);
 }
 
 async function pollDashboard() {
@@ -299,6 +335,76 @@ function setupChrono() {
     window.setInterval(tick, 1000);
 }
 
+function setupLiveGame() {
+    const game = $("[data-live-game]");
+    if (!game) return;
+    const matchId = game.dataset.matchId;
+    const digit = $("[data-score-digit]", game);
+    const wheel = $("[data-score-wheel]", game);
+    let score = Number(game.dataset.score || 0);
+    let touchStartY = null;
+    let busy = false;
+
+    function renderScore(nextScore, direction = 0) {
+        if (nextScore === score) return;
+        score = nextScore;
+        digit.textContent = String(score);
+        wheel.classList.remove("roll-up", "roll-down");
+        void wheel.offsetWidth;
+        wheel.classList.add(direction > 0 ? "roll-down" : "roll-up");
+    }
+
+    async function changeScore(delta) {
+        if (busy) return;
+        busy = true;
+        const data = await fetchJson(`/matches/${matchId}/live-score`, {
+            method: "POST",
+            body: JSON.stringify({ delta }),
+        });
+        busy = false;
+        if (!data.ok) {
+            showToast(data.message || "Score impossible.", "error");
+            if (data.redirect) window.location.href = data.redirect;
+            return;
+        }
+        renderScore(data.own_score, delta);
+        if (data.finished && data.redirect) {
+            showToast("Premier à 10. Validation du score.", "success");
+            window.setTimeout(() => {
+                window.location.href = data.redirect;
+            }, 700);
+        }
+    }
+
+    game.addEventListener("touchstart", (event) => {
+        touchStartY = event.touches[0].clientY;
+    }, { passive: true });
+
+    game.addEventListener("touchend", (event) => {
+        if (touchStartY === null) return;
+        const endY = event.changedTouches[0].clientY;
+        const deltaY = endY - touchStartY;
+        touchStartY = null;
+        if (Math.abs(deltaY) < 34) return;
+        changeScore(deltaY > 0 ? 1 : -1);
+    }, { passive: true });
+
+    $$("[data-score-delta]", game).forEach((button) => {
+        button.addEventListener("click", () => changeScore(Number(button.dataset.scoreDelta)));
+    });
+
+    window.setInterval(async () => {
+        const response = await fetch(`/matches/${matchId}/live-state`, { credentials: "same-origin" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.redirect) {
+            window.location.href = data.redirect;
+            return;
+        }
+        renderScore(data.own_score, 0);
+    }, 1800);
+}
+
 function setupConfirmations() {
     $$("form[data-confirm]").forEach((form) => {
         form.addEventListener("submit", (event) => {
@@ -317,6 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupChallengeForms();
     setupInvitationActions();
     setupChrono();
+    setupLiveGame();
     setupConfirmations();
 
     document.addEventListener("player:selected", updatePredictions);

@@ -17,7 +17,7 @@ from rating_system import (
 
 
 OPEN_STATUSES = ("pending_invitation", "active", "pending_validation", "disputed")
-PLAY_STATUSES = ("active", "pending_validation", "disputed")
+PLAY_STATUSES = ("active", "pending_validation", "pending_cancellation", "disputed")
 
 
 def parse_names_from_email(email):
@@ -370,6 +370,7 @@ def serialize_match_card(match, user):
     status_labels = {
         "active": "En cours",
         "pending_validation": "Validation",
+        "pending_cancellation": "Arrêt demandé",
         "disputed": "Correction",
     }
     return {
@@ -379,7 +380,9 @@ def serialize_match_card(match, user):
         "status_label": status_labels.get(match.status, match.status),
         "title": f"{match.mode} · {match.team_label('A')} vs {match.team_label('B')}",
         "subtitle": score_label(match),
-        "href": url_for("matches.match_detail", match_id=match.id),
+        "href": url_for("matches.play_match", match_id=match.id)
+        if match.status == "active"
+        else url_for("matches.match_detail", match_id=match.id),
     }
 
 

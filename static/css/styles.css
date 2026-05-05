@@ -1145,6 +1145,46 @@ select:focus {
     pointer-events: none;
 }
 
+.challenge-notification-root {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 12px;
+    z-index: 100;
+    display: grid;
+    pointer-events: none;
+}
+
+.challenge-notification {
+    display: grid;
+    gap: 10px;
+    width: min(100%, 560px);
+    margin: 0 auto;
+    padding: 12px;
+    border: 1px solid rgba(49, 95, 157, 0.22);
+    border-radius: var(--radius);
+    background: rgba(255, 253, 248, 0.96);
+    box-shadow: 0 20px 58px rgba(33, 27, 22, 0.26);
+    pointer-events: auto;
+    backdrop-filter: blur(18px);
+}
+
+.challenge-notification strong,
+.challenge-notification small {
+    display: block;
+}
+
+.challenge-notification small {
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.challenge-notification-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
 .toast {
     width: min(100%, 520px);
     margin: 0 auto;
@@ -1156,6 +1196,184 @@ select:focus {
     box-shadow: var(--shadow);
     font-weight: 900;
     animation: toastIn 0.24s ease both;
+}
+
+.live-game {
+    min-height: calc(100vh - 130px);
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: 18px;
+    padding: 16px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background:
+        linear-gradient(180deg, rgba(255, 250, 241, 0.92), rgba(255, 250, 241, 0.7)),
+        repeating-linear-gradient(90deg, rgba(140, 91, 53, 0.05) 0 16px, transparent 16px 32px);
+    box-shadow: var(--shadow);
+    touch-action: none;
+    user-select: none;
+}
+
+.live-top,
+.live-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.live-team {
+    display: grid;
+    gap: 4px;
+    text-align: center;
+}
+
+.live-team small {
+    color: var(--muted);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.live-team strong {
+    font-size: 1.15rem;
+}
+
+.score-wheel {
+    position: relative;
+    display: grid;
+    min-height: 280px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 40%, transparent 60%, rgba(33, 27, 22, 0.06)),
+        #fffdf8;
+    box-shadow: inset 0 0 0 1px var(--line), inset 0 18px 40px rgba(79, 52, 35, 0.08);
+}
+
+.score-wheel::before,
+.score-wheel::after {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    height: 1px;
+    background: rgba(79, 52, 35, 0.14);
+}
+
+.score-wheel::before {
+    top: 34%;
+}
+
+.score-wheel::after {
+    bottom: 34%;
+}
+
+.score-digit {
+    font-size: clamp(9rem, 42vw, 15rem);
+    font-weight: 1000;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+}
+
+.live-game.blue .score-digit {
+    color: var(--blue);
+    text-shadow: 0 16px 34px rgba(49, 95, 157, 0.22);
+}
+
+.live-game.red .score-digit {
+    color: var(--red);
+    text-shadow: 0 16px 34px rgba(201, 87, 59, 0.22);
+}
+
+.score-wheel.roll-down .score-digit {
+    animation: wheelDown 0.28s ease both;
+}
+
+.score-wheel.roll-up .score-digit {
+    animation: wheelUp 0.28s ease both;
+}
+
+@keyframes wheelDown {
+    0% {
+        transform: translateY(-42px);
+        opacity: 0.25;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes wheelUp {
+    0% {
+        transform: translateY(42px);
+        opacity: 0.25;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.swipe-hint {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-align: center;
+    animation: hintFade 6s ease forwards;
+}
+
+.hint-phone {
+    position: relative;
+    width: 38px;
+    height: 58px;
+    border: 2px solid rgba(79, 52, 35, 0.28);
+    border-radius: 13px;
+}
+
+.hint-phone span {
+    position: absolute;
+    left: 50%;
+    top: 34px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--green);
+    transform: translateX(-50%);
+    animation: swipeDemo 1.5s ease-in-out 3;
+}
+
+@keyframes swipeDemo {
+    0%, 100% {
+        transform: translate(-50%, 8px);
+    }
+    50% {
+        transform: translate(-50%, -18px);
+    }
+}
+
+@keyframes hintFade {
+    0%, 82% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.2;
+    }
+}
+
+.live-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.score-tap,
+.stop-match-btn {
+    width: 100%;
 }
 
 .toast.error,

@@ -168,6 +168,8 @@ def match_detail(match_id):
     expire_matches()
     match = Match.query.get_or_404(match_id)
     participant = _participant_or_403(match)
+    if match.status == "active":
+        return redirect(url_for("matches.play_match", match_id=match.id))
     prediction = None
     if match.mode == "1v1":
         prediction = prediction_1v1(match.team("A")[0].user, match.team("B")[0].user)
@@ -216,17 +218,160 @@ def answer_invitation(match_id):
     if match.accepted_invitations():
         match.status = "active"
         match.started_at = utcnow()
+        match.live_score_a = 0
+        match.live_score_b = 0
         for item in match.participants:
             item.validation_status = "pending"
         db.session.commit()
         return _reply(
             True,
             "Match lancé.",
-            redirect_to=url_for("matches.match_detail", match_id=match.id),
+            redirect_to=url_for("matches.play_match", match_id=match.id),
         )
 
     db.session.commit()
     return _reply(True, "Invitation acceptée.", redirect_to=url_for("main.home"))
+
+
+@matches_bp.route("/<int:match_id>/play")
+@login_required
+def play_match(match_id):
+    expire_matches()
+    match = Match.query.get_or_404(match_id)
+    participant = _participant_or_403(match)
+    if match.status != "active":
+        return redirect(url_for("matches.match_detail", match_id=match.id))
+
+    own_score = match.live_score_a if participant.team == "A" else match.live_score_b
+    return render_template(
+        "play_match.html",
+        match=match,
+        participant=participant,
+        own_score=own_score,
+        team_color="blue" if participant.team == "A" else "red",
+    )
+
+
+def _move_to_score_validation(match, proposer):
+    match.score_a = match.live_score_a
+    match.score_b = match.live_score_b
+    match.proposal_round += 1
+    match.proposed_by_id = proposer.id
+    match.status = "pending_validation"
+    match.public_note = None
+    for item in match.participants:
+        item.validation_status = "pending"
+
+
+@matches_bp.route("/<int:match_id>/live-score", methods=["POST"])
+@login_required
+def update_live_score(match_id):
+    match = Match.query.get_or_404(match_id)
+    participant = _participant_or_403(match)
+    if match.status != "active":
+        return jsonify({"ok": False, "message": "Match inactif."}), 400
+
+    data = _payload()
+    try:
+        delta = int(data.get("delta", 0))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "message": "Score invalide."}), 400
+    delta = max(-1, min(1, delta))
+
+    field = "live_score_a" if participant.team == "A" else "live_score_b"
+    current_score = getattr(match, field) or 0
+    setattr(match, field, max(0, min(10, current_score + delta)))
+
+    finished = match.live_score_a == 10 or match.live_score_b == 10
+    redirect_to = None
+    if finished:
+        _move_to_score_validation(match, current_user)
+        redirect_to = url_for("matches.match_detail", match_id=match.id)
+
+    db.session.commit()
+    return jsonify(
+        {
+            "ok": True,
+            "message": "Score mis à jour.",
+            "own_score": match.live_score_a if participant.team == "A" else match.live_score_b,
+            "team_a": match.live_score_a,
+            "team_b": match.live_score_b,
+            "finished": finished,
+            "redirect": redirect_to,
+        }
+    )
+
+
+@matches_bp.route("/<int:match_id>/live-state")
+@login_required
+def live_state(match_id):
+    match = Match.query.get_or_404(match_id)
+    participant = _participant_or_403(match)
+    return jsonify(
+        {
+            "ok": True,
+            "status": match.status,
+            "own_score": match.live_score_a if participant.team == "A" else match.live_score_b,
+            "team_a": match.live_score_a,
+            "team_b": match.live_score_b,
+            "redirect": url_for("matches.match_detail", match_id=match.id)
+            if match.status != "active"
+            else None,
+        }
+    )
+
+
+@matches_bp.route("/<int:match_id>/stop", methods=["POST"])
+@login_required
+def request_stop(match_id):
+    match = Match.query.get_or_404(match_id)
+    _participant_or_403(match)
+    if match.status != "active":
+        return _reply(False, "La partie n'est pas en cours.", 400, url_for("matches.match_detail", match_id=match.id))
+
+    match.status = "pending_cancellation"
+    match.stop_requested_by_id = current_user.id
+    match.cancelled_reason = "Arrêt prématuré demandé"
+    match.public_note = f"Arrêt demandé par {current_user.pseudo}."
+    for item in match.participants:
+        item.validation_status = "accepted" if item.user_id == current_user.id else "pending"
+    db.session.commit()
+    return _reply(True, "Demande d'arrêt envoyée.", redirect_to=url_for("matches.match_detail", match_id=match.id))
+
+
+@matches_bp.route("/<int:match_id>/stop-validation", methods=["POST"])
+@login_required
+def validate_stop(match_id):
+    match = Match.query.get_or_404(match_id)
+    participant = _participant_or_403(match)
+    data = _payload()
+    action = data.get("action")
+
+    if match.status != "pending_cancellation":
+        return _reply(False, "Aucune demande d'arrêt en attente.", 400, url_for("matches.match_detail", match_id=match.id))
+    if participant.validation_status != "pending":
+        return _reply(False, "Réponse déjà enregistrée.", 400, url_for("matches.match_detail", match_id=match.id))
+
+    if action == "accept":
+        participant.validation_status = "accepted"
+        if match.accepted_validations():
+            match.status = "cancelled"
+            match.public_note = f"Partie arrêtée à {match.live_score_a}-{match.live_score_b}."
+            match.cancelled_reason = "Arrêt prématuré accepté"
+        db.session.commit()
+        return _reply(True, "Arrêt confirmé.", redirect_to=url_for("matches.match_detail", match_id=match.id))
+
+    if action == "refuse":
+        match.status = "active"
+        match.public_note = f"Arrêt refusé par {current_user.pseudo}."
+        match.cancelled_reason = None
+        match.stop_requested_by_id = None
+        for item in match.participants:
+            item.validation_status = "pending"
+        db.session.commit()
+        return _reply(True, "Arrêt refusé, la partie reprend.", redirect_to=url_for("matches.play_match", match_id=match.id))
+
+    return _reply(False, "Action invalide.", 400, url_for("matches.match_detail", match_id=match.id))
 
 
 @matches_bp.route("/<int:match_id>/score", methods=["POST"])
@@ -235,7 +380,7 @@ def submit_score(match_id):
     match = Match.query.get_or_404(match_id)
     _participant_or_403(match)
 
-    if match.status not in ("active", "disputed"):
+    if match.status != "disputed":
         return _reply(False, "Score non modifiable pour ce match.", 400, url_for("matches.match_detail", match_id=match.id))
 
     if match.mode == "2v2" and match.host_id != current_user.id:

@@ -15,6 +15,12 @@ USER_COLUMNS = {
     "badge": "VARCHAR(80)",
 }
 
+MATCH_COLUMNS = {
+    "live_score_a": "INTEGER NOT NULL DEFAULT 0",
+    "live_score_b": "INTEGER NOT NULL DEFAULT 0",
+    "stop_requested_by_id": "INTEGER",
+}
+
 
 def migrate_light_schema():
     inspector = inspect(db.engine)
@@ -25,6 +31,12 @@ def migrate_light_schema():
         for name, ddl in USER_COLUMNS.items():
             if name not in existing:
                 connection.execute(text(f"ALTER TABLE user ADD COLUMN {name} {ddl}"))
+    if "match" in inspector.get_table_names():
+        existing = {column["name"] for column in inspector.get_columns("match")}
+        with db.engine.begin() as connection:
+            for name, ddl in MATCH_COLUMNS.items():
+                if name not in existing:
+                    connection.execute(text(f"ALTER TABLE match ADD COLUMN {name} {ddl}"))
 
 
 def ensure_default_settings():

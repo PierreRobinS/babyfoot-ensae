@@ -42,7 +42,7 @@
     </section>
 {% endif %}
 
-{% if match.status in ["active", "disputed"] %}
+{% if match.status == "disputed" %}
     <section class="panel reveal">
         <div class="section-head">
             <h2>{% if match.status == "disputed" %}Correction{% else %}Score{% endif %}</h2>
@@ -82,6 +82,25 @@
             </form>
         {% else %}
             <p class="muted">Votre validation est enregistrée.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if match.status == "pending_cancellation" %}
+    <section class="panel reveal">
+        <div class="section-head">
+            <h2>Arrêt demandé</h2>
+            <span class="soft-badge">{{ match.live_score_a }}-{{ match.live_score_b }}</span>
+        </div>
+        <p class="muted">{{ match.public_note or "Un joueur demande l'arrêt de la partie." }}</p>
+        {% if participant.validation_status == "pending" %}
+            <form method="post" action="{{ url_for('matches.validate_stop', match_id=match.id) }}" class="action-row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="secondary-btn" type="submit" name="action" value="refuse">Continuer</button>
+                <button class="primary-btn" type="submit" name="action" value="accept">Accepter l'arrêt</button>
+            </form>
+        {% else %}
+            <p class="muted">Votre réponse est enregistrée.</p>
         {% endif %}
     </section>
 {% endif %}

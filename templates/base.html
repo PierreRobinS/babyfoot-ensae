@@ -58,6 +58,7 @@
         {% endif %}
     </div>
 
+    <div id="challenge-notification-root" class="challenge-notification-root"></div>
     <div id="toast-root" class="toast-root" aria-live="polite">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}

@@ -102,8 +102,11 @@ class Match(db.Model):
 
     score_a = db.Column(db.Integer, nullable=True)
     score_b = db.Column(db.Integer, nullable=True)
+    live_score_a = db.Column(db.Integer, default=0, nullable=False)
+    live_score_b = db.Column(db.Integer, default=0, nullable=False)
     proposal_round = db.Column(db.Integer, default=0, nullable=False)
     proposed_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    stop_requested_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
     cancelled_reason = db.Column(db.String(255), nullable=True)
     public_note = db.Column(db.String(255), nullable=True)
@@ -112,6 +115,7 @@ class Match(db.Model):
 
     host = db.relationship("User", back_populates="hosted_matches", foreign_keys=[host_id])
     proposed_by = db.relationship("User", foreign_keys=[proposed_by_id])
+    stop_requested_by = db.relationship("User", foreign_keys=[stop_requested_by_id])
     refused_by = db.relationship("User", foreign_keys=[refused_by_id])
     non_response_user = db.relationship("User", foreign_keys=[non_response_user_id])
     participants = db.relationship(

@@ -39,6 +39,10 @@ def create_app():
     app.register_blueprint(profiles_bp)
     app.register_blueprint(admin_bp)
 
+    @app.route("/healthz")
+    def healthz():
+        return {"ok": True, "service": "babyfoot-ensae"}
+
     @app.before_request
     def keep_match_state_fresh():
         if request.endpoint and request.endpoint.startswith("static"):
