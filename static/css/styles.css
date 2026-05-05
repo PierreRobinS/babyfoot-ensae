@@ -18,13 +18,34 @@
     box-sizing: border-box;
 }
 
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body * {
+    min-width: 0;
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
 html {
     min-height: 100%;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 body {
     margin: 0;
+    width: 100%;
+    max-width: 100vw;
     min-height: 100vh;
+    overflow-x: hidden;
     color: var(--ink);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background:
@@ -52,9 +73,11 @@ button {
 
 .app-shell {
     width: min(100%, 720px);
+    max-width: 100vw;
     min-height: 100vh;
     margin: 0 auto;
     padding-bottom: 92px;
+    overflow-x: clip;
 }
 
 .topbar {
@@ -133,8 +156,12 @@ button {
 
 .page {
     display: grid;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     gap: 16px;
     padding: 16px;
+    overflow-x: clip;
 }
 
 .signed-out .app-shell {
@@ -354,7 +381,8 @@ select:focus {
 
 .rating-rings {
     display: flex;
-    gap: 8px;
+    flex: 0 0 auto;
+    gap: 6px;
 }
 
 .rating-rings span {
@@ -380,6 +408,8 @@ select:focus {
 .match-hero,
 .profile-head {
     display: grid;
+    width: 100%;
+    min-width: 0;
     gap: 14px;
     padding: 16px;
 }
@@ -387,9 +417,16 @@ select:focus {
 .section-head,
 .match-status-row {
     display: flex;
+    min-width: 0;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+
+.section-head h1,
+.section-head h2,
+.match-status-row span {
+    min-width: 0;
 }
 
 .soft-badge,
@@ -481,6 +518,8 @@ select:focus {
     right: 0;
     z-index: 20;
     display: none;
+    width: 100%;
+    min-width: 0;
     max-height: 292px;
     overflow: auto;
     padding: 8px;
@@ -497,7 +536,7 @@ select:focus {
 
 .suggestions button {
     display: grid;
-    grid-template-columns: 38px 1fr auto;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
     width: 100%;
@@ -515,8 +554,8 @@ select:focus {
 .suggestions img,
 .ranking-card img,
 .delta-card img {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -524,6 +563,9 @@ select:focus {
 .suggestions strong,
 .suggestions small {
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .suggestions small {
@@ -837,7 +879,7 @@ select:focus {
     bottom: 12px;
     z-index: 40;
     display: grid;
-    width: min(calc(100% - 24px), 680px);
+    width: min(calc(100vw - 16px), 680px);
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     padding: 8px;
@@ -1138,6 +1180,7 @@ select:focus {
     position: fixed;
     left: 12px;
     right: 12px;
+    max-width: calc(100vw - 24px);
     bottom: 84px;
     z-index: 80;
     display: grid;
@@ -1149,6 +1192,7 @@ select:focus {
     position: fixed;
     left: 12px;
     right: 12px;
+    max-width: calc(100vw - 24px);
     top: 12px;
     z-index: 100;
     display: grid;
@@ -1479,10 +1523,14 @@ select:focus {
 .home-page,
 .menu-page,
 .match-page {
+    width: 100%;
+    max-width: 100%;
     height: 100%;
     min-height: 0;
+    min-width: 0;
     display: grid;
     gap: 12px;
+    overflow-x: clip;
 }
 
 .home-page {
@@ -1490,22 +1538,30 @@ select:focus {
 }
 
 .home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     min-height: 82px;
     padding: 12px;
+    align-items: center;
 }
 
 .home-id {
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .home-id img {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: 10px;
     object-fit: cover;
+}
+
+.home-id span {
+    min-width: 0;
 }
 
 .home-id small,
@@ -1515,7 +1571,7 @@ select:focus {
 
 .home-id small {
     color: var(--muted);
-    font-size: 0.72rem;
+    font-size: 0.64rem;
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -1523,29 +1579,34 @@ select:focus {
 .home-id strong {
     overflow: hidden;
     color: var(--ink);
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 1000;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .home-screen .rating-rings span {
-    width: 58px;
-    height: 58px;
-    border-radius: 18px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 0.64rem;
 }
 
 .home-screen .rating-rings strong {
-    font-size: 0.95rem;
+    font-size: 0.78rem;
 }
 
 .home-challenge {
+    width: 100%;
+    max-width: 100%;
     min-height: 0;
     overflow: visible;
     align-content: start;
 }
 
 .home-screen .challenge-form {
+    width: 100%;
+    min-width: 0;
     gap: 10px;
 }
 
@@ -1760,8 +1821,8 @@ select:focus {
     }
 
     .home-screen .rating-rings span {
-        width: 50px;
-        height: 50px;
+        width: 42px;
+        height: 42px;
         font-size: 0.66rem;
     }
 
@@ -1782,6 +1843,66 @@ select:focus {
     }
 
     .swipe-hint p {
+        display: none;
+    }
+}
+
+@media (max-width: 380px) {
+    .home-screen .page,
+    .menu-screen .page,
+    .match-screen .page {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .home-hero {
+        grid-template-columns: minmax(0, 1fr) auto;
+        min-height: 66px;
+        padding: 9px;
+    }
+
+    .home-id {
+        gap: 6px;
+    }
+
+    .home-id img {
+        width: 24px;
+        height: 24px;
+        flex-basis: 24px;
+        border-radius: 8px;
+    }
+
+    .home-id small {
+        display: none;
+    }
+
+    .home-id strong {
+        font-size: 0.9rem;
+    }
+
+    .home-screen .rating-rings span {
+        width: 39px;
+        height: 39px;
+        padding: 3px;
+        border-radius: 12px;
+        font-size: 0.58rem;
+    }
+
+    .home-screen .rating-rings strong {
+        font-size: 0.68rem;
+    }
+
+    .segmented button {
+        min-width: 44px;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    .suggestions button {
+        grid-template-columns: 30px minmax(0, 1fr);
+    }
+
+    .suggestions button > small {
         display: none;
     }
 }
