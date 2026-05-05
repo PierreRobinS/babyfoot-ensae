@@ -85,6 +85,33 @@ def _delete_match(match):
     db.session.delete(match)
 
 
+def _ban_pair_label(ban):
+    user_ids = []
+    for chunk in ban.group_key.replace("__vs__", "-").split("-"):
+        try:
+            user_ids.append(int(chunk))
+        except ValueError:
+            continue
+
+    users_by_id = {user.id: user for user in User.query.filter(User.id.in_(user_ids)).all()}
+    if ban.mode == "1v1" and len(user_ids) >= 2:
+        return " vs ".join(users_by_id.get(user_id).pseudo if users_by_id.get(user_id) else f"#{user_id}" for user_id in user_ids[:2])
+
+    if "__vs__" in ban.group_key:
+        labels = []
+        for team_key in ban.group_key.split("__vs__"):
+            team_ids = []
+            for chunk in team_key.split("-"):
+                try:
+                    team_ids.append(int(chunk))
+                except ValueError:
+                    continue
+            labels.append(" + ".join(users_by_id.get(user_id).pseudo if users_by_id.get(user_id) else f"#{user_id}" for user_id in team_ids))
+        return " vs ".join(labels)
+
+    return ban.group_key
+
+
 @admin_bp.route("")
 @login_required
 @admin_required
@@ -124,6 +151,11 @@ def dashboard():
         .limit(5)
         .all()
     )
+    active_pair_bans = (
+        BanPair.query.filter(BanPair.banned_until.isnot(None), BanPair.banned_until > now)
+        .order_by(BanPair.banned_until.asc())
+        .all()
+    )
 
     stats = {
         "players": len(users),
@@ -143,7 +175,22 @@ def dashboard():
         top_progress=top_progress,
         top_1v1=User.query.order_by(User.rating_1v1.desc()).limit(5).all(),
         top_2v2=User.query.order_by(User.rating_2v2.desc()).limit(5).all(),
+        active_pair_bans=active_pair_bans,
+        ban_pair_label=_ban_pair_label,
     )
+
+
+@admin_bp.route("/pair-bans/<int:ban_id>/clear", methods=["POST"])
+@login_required
+@admin_required
+def clear_pair_ban(ban_id):
+    ban = BanPair.query.get_or_404(ban_id)
+    label = _ban_pair_label(ban)
+    ban.banned_until = None
+    log_admin_action("pair_ban_clear", "ban_pair", ban.id, label)
+    db.session.commit()
+    flash(f"Punition temporaire levée pour {label}.", "success")
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.route("/users")

@@ -1031,6 +1031,37 @@ select:focus {
     background: #fffdf8;
 }
 
+.punishment-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fffdf8;
+}
+
+.punishment-card strong,
+.punishment-card small {
+    display: block;
+}
+
+.punishment-card small {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.punishment-card form {
+    margin: 0;
+}
+
+.punishment-card .secondary-btn {
+    min-height: 38px;
+    padding: 8px 12px;
+}
+
 .admin-search,
 .filter-row,
 .admin-actions,

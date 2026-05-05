@@ -18,6 +18,29 @@
 </section>
 
 <section class="panel reveal">
+    <div class="section-head">
+        <h2>Punitions temporaires entre joueurs</h2>
+        <span class="soft-badge">{{ active_pair_bans|length }}</span>
+    </div>
+    <div class="compact-list">
+        {% for ban in active_pair_bans %}
+            <article class="punishment-card">
+                <div>
+                    <strong>{{ ban_pair_label(ban) }}</strong>
+                    <small>{{ ban.mode }} · compteur {{ ban.count }} · jusqu'au {{ ban.banned_until.strftime('%d/%m %H:%M') }}</small>
+                </div>
+                <form method="post" action="{{ url_for('admin.clear_pair_ban', ban_id=ban.id) }}" data-confirm="Lever cette punition temporaire ?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="secondary-btn danger" type="submit">Lever</button>
+                </form>
+            </article>
+        {% else %}
+            <div class="empty-state">Aucune punition temporaire active.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel reveal">
     <div class="section-head"><h2>Matchs par jour</h2><span class="soft-badge">7 jours</span></div>
     <div class="mini-chart">
         {% set max_match = (matches_by_day|map(attribute='count')|max) or 1 %}
