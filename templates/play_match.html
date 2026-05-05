@@ -5,7 +5,10 @@
 {% block content %}
 <section class="live-game {{ team_color }}" data-live-game data-match-id="{{ match.id }}" data-score="{{ own_score }}">
     <div class="live-top">
-        <span class="mode-chip">{{ match.mode }}</span>
+        <form method="post" action="{{ url_for('matches.request_stop', match_id=match.id) }}" data-confirm="Demander l'arret de la partie ? Tous les camps devront confirmer.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="live-cancel-btn" type="submit">Annuler</button>
+        </form>
         <div class="chrono" data-started-at="{{ match.started_at.isoformat() }}Z">00:00</div>
     </div>
 
@@ -14,20 +17,13 @@
         <strong>{{ match.team_label(participant.team) }}</strong>
     </div>
 
-    <div class="score-wheel" data-score-wheel aria-live="polite">
-        <div class="score-digit" data-score-digit>{{ own_score }}</div>
+    <div class="score-stage" data-score-stage aria-live="polite">
+        <div class="score-digit score-digit-current" data-score-digit>{{ own_score }}</div>
+        <div class="score-digit score-digit-preview" data-score-preview aria-hidden="true">{{ own_score }}</div>
     </div>
 
     <div class="swipe-hint" data-swipe-hint>
-        <div class="hint-phone">
-            <span></span>
-        </div>
-        <p>Glissez vers le bas pour ajouter, vers le haut pour retirer.</p>
+        <p>Glissez bas +1, haut -1.</p>
     </div>
-
-    <form class="floating-stop-form" method="post" action="{{ url_for('matches.request_stop', match_id=match.id) }}" data-confirm="Demander l'arret de la partie ? Tous les camps devront confirmer.">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="secondary-btn danger stop-match-btn" type="submit">Arreter la partie</button>
-    </form>
 </section>
 {% endblock %}

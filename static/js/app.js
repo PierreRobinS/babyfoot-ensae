@@ -355,19 +355,50 @@ function setupLiveGame() {
     if (!game) return;
     const matchId = game.dataset.matchId;
     const digit = $("[data-score-digit]", game);
-    const wheel = $("[data-score-wheel]", game);
+    const preview = $("[data-score-preview]", game);
+    const stage = $("[data-score-stage]", game);
     let score = Number(game.dataset.score || 0);
     let touchStartY = null;
+    let dragDelta = 0;
     let busy = false;
 
+    function previewScore(deltaY) {
+        const direction = deltaY > 0 ? 1 : -1;
+        return Math.min(10, score + direction);
+    }
+
+    function resetDrag() {
+        dragDelta = 0;
+        stage?.style.setProperty("--drag-offset", "0px");
+        stage?.style.setProperty("--preview-offset", "0px");
+        stage?.style.setProperty("--preview-opacity", "0");
+        stage?.style.setProperty("--current-opacity", "1");
+        stage?.classList.remove("dragging");
+    }
+
+    function updateDrag(deltaY) {
+        dragDelta = deltaY;
+        const clamped = Math.max(-92, Math.min(92, deltaY));
+        const progress = Math.min(1, Math.abs(deltaY) / 92);
+        const direction = deltaY > 0 ? 1 : -1;
+        if (preview) preview.textContent = String(previewScore(deltaY));
+        stage?.classList.add("dragging");
+        stage?.style.setProperty("--drag-offset", `${clamped * 0.46}px`);
+        stage?.style.setProperty("--preview-offset", `${direction * -70 + clamped * 0.36}px`);
+        stage?.style.setProperty("--preview-opacity", String(progress * 0.78));
+        stage?.style.setProperty("--current-opacity", String(1 - progress * 0.48));
+    }
+
     function renderScore(nextScore, direction = 0) {
+        resetDrag();
         if (nextScore === score) return;
         score = nextScore;
         digit.textContent = String(score);
-        wheel.classList.remove("roll-up", "roll-down");
+        if (preview) preview.textContent = String(score);
+        stage?.classList.remove("commit-up", "commit-down");
         if (direction === 0) return;
-        void wheel.offsetWidth;
-        wheel.classList.add(direction > 0 ? "roll-down" : "roll-up");
+        void stage?.offsetWidth;
+        stage?.classList.add(direction > 0 ? "commit-down" : "commit-up");
     }
 
     async function changeScore(delta) {
@@ -394,15 +425,29 @@ function setupLiveGame() {
 
     game.addEventListener("touchstart", (event) => {
         touchStartY = event.touches[0].clientY;
+        resetDrag();
+    }, { passive: true });
+
+    game.addEventListener("touchmove", (event) => {
+        if (touchStartY === null || busy) return;
+        updateDrag(event.touches[0].clientY - touchStartY);
     }, { passive: true });
 
     game.addEventListener("touchend", (event) => {
         if (touchStartY === null) return;
         const endY = event.changedTouches[0].clientY;
-        const deltaY = endY - touchStartY;
+        const deltaY = dragDelta || (endY - touchStartY);
         touchStartY = null;
-        if (Math.abs(deltaY) < 34) return;
+        if (Math.abs(deltaY) < 54) {
+            resetDrag();
+            return;
+        }
         changeScore(deltaY > 0 ? 1 : -1);
+    }, { passive: true });
+
+    game.addEventListener("touchcancel", () => {
+        touchStartY = null;
+        resetDrag();
     }, { passive: true });
 
     window.setInterval(async () => {
