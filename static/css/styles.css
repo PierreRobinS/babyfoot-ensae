@@ -1488,17 +1488,6 @@ select:focus {
     }
 }
 
-.no-page-scroll {
-    height: 100dvh;
-    overflow: hidden;
-}
-
-.no-page-scroll .app-shell {
-    height: 100dvh;
-    min-height: 0;
-    padding-bottom: 84px;
-}
-
 .no-bottom-nav .app-shell {
     padding-bottom: 0;
 }
@@ -1507,16 +1496,9 @@ select:focus {
     display: none;
 }
 
-.no-page-scroll .page {
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-}
-
 .home-screen .page,
 .menu-screen .page,
 .match-screen .page {
-    height: calc(100dvh - 84px);
     padding: 12px;
 }
 
@@ -1525,16 +1507,10 @@ select:focus {
 .match-page {
     width: 100%;
     max-width: 100%;
-    height: 100%;
-    min-height: 0;
     min-width: 0;
     display: grid;
     gap: 12px;
     overflow-x: clip;
-}
-
-.home-page {
-    grid-template-rows: auto minmax(0, 1fr);
 }
 
 .home-hero {
@@ -1599,7 +1575,6 @@ select:focus {
 .home-challenge {
     width: 100%;
     max-width: 100%;
-    min-height: 0;
     overflow: visible;
     align-content: start;
 }
@@ -1659,25 +1634,24 @@ select:focus {
 }
 
 .live-screen .page {
-    height: 100dvh;
     padding: 0;
 }
 
 .live-game {
     width: 100%;
-    height: 100%;
-    min-height: 0;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    min-height: auto;
+    grid-template-rows: auto auto auto auto;
     gap: 12px;
     padding: 14px 12px calc(88px + env(safe-area-inset-bottom));
     border: 0;
     border-radius: 0;
     box-shadow: none;
+    overflow: visible;
 }
 
 .score-wheel {
-    min-height: 0;
-    height: 100%;
+    min-height: 280px;
+    height: auto;
 }
 
 .score-digit {
@@ -1702,24 +1676,17 @@ select:focus {
     box-shadow: 0 18px 44px rgba(212, 82, 82, 0.18);
 }
 
-.match-page {
-    grid-template-rows: auto minmax(0, 1fr);
-}
-
 .match-page .match-hero,
 .match-action-panel {
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
 }
 
 .match-action-panel {
-    min-height: 0;
-    overflow: hidden;
     align-content: start;
 }
 
 .match-page .delta-grid {
-    min-height: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .match-page .versus-board > div {
@@ -1729,10 +1696,6 @@ select:focus {
 .match-page .versus-score {
     min-width: 44px;
     height: 44px;
-}
-
-.menu-page {
-    grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .menu-head {
@@ -1749,24 +1712,21 @@ select:focus {
 }
 
 .menu-history {
-    min-height: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .menu-history-grid {
-    min-height: 0;
     display: grid;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     gap: 10px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .menu-history-grid > div {
-    min-height: 0;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
     gap: 8px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .menu-history h3 {
@@ -1774,12 +1734,10 @@ select:focus {
 }
 
 .compact-history {
-    min-height: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .compact-history .history-card {
-    min-height: 0;
     padding: 9px 10px;
 }
 
@@ -1800,50 +1758,6 @@ select:focus {
     to {
         transform: translateY(0);
         opacity: 1;
-    }
-}
-
-@media (max-height: 720px) {
-    .home-screen .page,
-    .menu-screen .page,
-    .match-screen .page {
-        padding: 8px;
-    }
-
-    .home-page,
-    .menu-page,
-    .match-page {
-        gap: 8px;
-    }
-
-    .home-hero {
-        min-height: 72px;
-    }
-
-    .home-screen .rating-rings span {
-        width: 42px;
-        height: 42px;
-        font-size: 0.66rem;
-    }
-
-    .panel,
-    .match-hero,
-    .profile-head,
-    .hero-panel {
-        padding: 12px;
-    }
-
-    .home-screen input {
-        min-height: 38px;
-    }
-
-    .home-screen .primary-btn,
-    .home-screen .secondary-btn {
-        min-height: 40px;
-    }
-
-    .swipe-hint p {
-        display: none;
     }
 }
 
