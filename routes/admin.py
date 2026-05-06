@@ -58,6 +58,26 @@ def _match_bucket(status):
     return status
 
 
+def _reset_user_rating_mode(user, mode, reset_stats=False):
+    setattr(user, f"hidden_rating_{mode}", Config.GLICKO_DEFAULT_RATING)
+    setattr(user, f"hidden_rd_{mode}", Config.GLICKO_DEFAULT_RD)
+    setattr(user, f"hidden_volatility_{mode}", Config.GLICKO_DEFAULT_VOLATILITY)
+    setattr(user, f"visible_rating_{mode}", Config.GLICKO_DEFAULT_RATING)
+    setattr(user, f"visible_rd_{mode}", Config.GLICKO_DEFAULT_RD)
+    setattr(user, f"visible_volatility_{mode}", Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY)
+    if reset_stats:
+        setattr(user, f"matches_{mode}", 0)
+        setattr(user, f"wins_{mode}", 0)
+        setattr(user, f"losses_{mode}", 0)
+
+
+def _reset_user_glicko_uncertainty(user):
+    user.hidden_rd_1v1 = user.hidden_rd_2v2 = Config.GLICKO_DEFAULT_RD
+    user.hidden_volatility_1v1 = user.hidden_volatility_2v2 = Config.GLICKO_DEFAULT_VOLATILITY
+    user.visible_rd_1v1 = user.visible_rd_2v2 = Config.GLICKO_DEFAULT_RD
+    user.visible_volatility_1v1 = user.visible_volatility_2v2 = Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY
+
+
 def _recalculate_mode(mode):
     completed = (
         Match.query.filter_by(mode=mode, status="completed")
@@ -65,16 +85,7 @@ def _recalculate_mode(mode):
         .all()
     )
     for user in User.query.all():
-        if mode == "1v1":
-            user.rating_1v1 = Config.GLICKO_DEFAULT_RATING
-            user.rd_1v1 = Config.GLICKO_DEFAULT_RD
-            user.volatility_1v1 = Config.GLICKO_DEFAULT_VOLATILITY
-            user.matches_1v1 = user.wins_1v1 = user.losses_1v1 = 0
-        else:
-            user.rating_2v2 = Config.GLICKO_DEFAULT_RATING
-            user.rd_2v2 = Config.GLICKO_DEFAULT_RD
-            user.volatility_2v2 = Config.GLICKO_DEFAULT_VOLATILITY
-            user.matches_2v2 = user.wins_2v2 = user.losses_2v2 = 0
+        _reset_user_rating_mode(user, mode, reset_stats=True)
     db.session.flush()
     for match in completed:
         complete_match(match)
@@ -173,8 +184,8 @@ def dashboard():
         matches_by_day=matches_by_day,
         signups_by_day=signups_by_day,
         top_progress=top_progress,
-        top_1v1=User.query.order_by(User.rating_1v1.desc()).limit(5).all(),
-        top_2v2=User.query.order_by(User.rating_2v2.desc()).limit(5).all(),
+        top_1v1=User.query.order_by(User.visible_rating_1v1.desc()).limit(5).all(),
+        top_2v2=User.query.order_by(User.visible_rating_2v2.desc()).limit(5).all(),
         active_pair_bans=active_pair_bans,
         ban_pair_label=_ban_pair_label,
     )
@@ -218,9 +229,9 @@ def user_action(user_id):
 
     if action == "update":
         user.pseudo = request.form.get("pseudo", user.pseudo).strip() or user.pseudo
-        user.rating_1v1 = float(request.form.get("rating_1v1", user.rating_1v1))
-        user.rating_2v2 = float(request.form.get("rating_2v2", user.rating_2v2))
-        log_admin_action("user_update", "user", user.id, f"Pseudo/Elo modifiés pour {user.email}")
+        user.visible_rating_1v1 = float(request.form.get("visible_rating_1v1", user.visible_rating_1v1))
+        user.visible_rating_2v2 = float(request.form.get("visible_rating_2v2", user.visible_rating_2v2))
+        log_admin_action("user_update", "user", user.id, f"Pseudo/Elo visible modifiés pour {user.email}")
     elif action == "reset_password":
         password = request.form.get("password", "").strip()
         if len(password) < 8:
@@ -229,8 +240,7 @@ def user_action(user_id):
         user.set_password(password)
         log_admin_action("password_reset", "user", user.id, "Reset mot de passe")
     elif action == "reset_glicko":
-        user.rd_1v1 = user.rd_2v2 = Config.GLICKO_DEFAULT_RD
-        user.volatility_1v1 = user.volatility_2v2 = Config.GLICKO_DEFAULT_VOLATILITY
+        _reset_user_glicko_uncertainty(user)
         log_admin_action("glicko_reset", "user", user.id, "RD/volatility reset")
     elif action == "upload_photo":
         photo = request.files.get("photo")
@@ -427,11 +437,8 @@ def rankings():
             _recalculate_mode("2v2")
         elif action == "reset_season":
             for user in User.query.all():
-                user.rating_1v1 = user.rating_2v2 = Config.GLICKO_DEFAULT_RATING
-                user.rd_1v1 = user.rd_2v2 = Config.GLICKO_DEFAULT_RD
-                user.volatility_1v1 = user.volatility_2v2 = Config.GLICKO_DEFAULT_VOLATILITY
-                user.matches_1v1 = user.matches_2v2 = 0
-                user.wins_1v1 = user.wins_2v2 = user.losses_1v1 = user.losses_2v2 = 0
+                _reset_user_rating_mode(user, "1v1", reset_stats=True)
+                _reset_user_rating_mode(user, "2v2", reset_stats=True)
         elif action == "archive_season":
             log_admin_action("season_archive", "ranking", None, "Saison archivée")
         elif action == "new_season":
@@ -451,8 +458,8 @@ def rankings():
     return render_template(
         "admin/rankings.html",
         frozen=setting_value("rankings_frozen", "false") == "true",
-        ranking_1v1=User.query.order_by(User.rating_1v1.desc()).limit(20).all(),
-        ranking_2v2=User.query.order_by(User.rating_2v2.desc()).limit(20).all(),
+        ranking_1v1=User.query.order_by(User.visible_rating_1v1.desc()).limit(20).all(),
+        ranking_2v2=User.query.order_by(User.visible_rating_2v2.desc()).limit(20).all(),
     )
 
 
@@ -528,9 +535,8 @@ def god():
         action = request.form.get("action")
         if action == "reset_all_elo":
             for user in User.query.all():
-                user.rating_1v1 = user.rating_2v2 = Config.GLICKO_DEFAULT_RATING
-                user.rd_1v1 = user.rd_2v2 = Config.GLICKO_DEFAULT_RD
-                user.volatility_1v1 = user.volatility_2v2 = Config.GLICKO_DEFAULT_VOLATILITY
+                _reset_user_rating_mode(user, "1v1")
+                _reset_user_rating_mode(user, "2v2")
         elif action == "champion_badge":
             user = db.session.get(User, int(request.form.get("user_id", 0)))
             if user:

@@ -75,7 +75,7 @@
         <h2>Top 1v1</h2>
         <div class="compact-list">
             {% for user in top_1v1 %}
-                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ loop.index }}. {{ user.pseudo }}</span><strong>{{ user.rating_1v1|round|int }}</strong></a>
+                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ loop.index }}. {{ user.pseudo }}</span><strong>{{ user.visible_rating_1v1|round|int }}</strong></a>
             {% endfor %}
         </div>
     </article>
@@ -83,7 +83,7 @@
         <h2>Top 2v2</h2>
         <div class="compact-list">
             {% for user in top_2v2 %}
-                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ loop.index }}. {{ user.pseudo }}</span><strong>{{ user.rating_2v2|round|int }}</strong></a>
+                <a href="{{ url_for('profiles.profile', user_id=user.id) }}"><span>{{ loop.index }}. {{ user.pseudo }}</span><strong>{{ user.visible_rating_2v2|round|int }}</strong></a>
             {% endfor %}
         </div>
     </article>

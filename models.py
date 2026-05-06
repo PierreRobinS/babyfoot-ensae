@@ -29,15 +29,28 @@ class User(UserMixin, db.Model):
     banned_until = db.Column(db.DateTime, nullable=True)
     badge = db.Column(db.String(80), nullable=True)
 
-    rating_1v1 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
-    rd_1v1 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
-    volatility_1v1 = db.Column(
+    # Dual-rating architecture:
+    # hidden_* keeps the precise probabilistic skill model used for predictions,
+    # visible_* drives the public ladder shown to players.
+    hidden_rating_1v1 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
+    hidden_rd_1v1 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
+    hidden_volatility_1v1 = db.Column(
         db.Float, default=Config.GLICKO_DEFAULT_VOLATILITY, nullable=False
     )
-    rating_2v2 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
-    rd_2v2 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
-    volatility_2v2 = db.Column(
+    hidden_rating_2v2 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
+    hidden_rd_2v2 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
+    hidden_volatility_2v2 = db.Column(
         db.Float, default=Config.GLICKO_DEFAULT_VOLATILITY, nullable=False
+    )
+    visible_rating_1v1 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
+    visible_rd_1v1 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
+    visible_volatility_1v1 = db.Column(
+        db.Float, default=Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY, nullable=False
+    )
+    visible_rating_2v2 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
+    visible_rd_2v2 = db.Column(db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
+    visible_volatility_2v2 = db.Column(
+        db.Float, default=Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY, nullable=False
     )
 
     matches_1v1 = db.Column(db.Integer, default=0, nullable=False)
@@ -68,10 +81,18 @@ class User(UserMixin, db.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip().title()
 
-    def rating_state(self, mode):
+    def hidden_rating_state(self, mode):
         if mode == "1v1":
-            return self.rating_1v1, self.rd_1v1, self.volatility_1v1
-        return self.rating_2v2, self.rd_2v2, self.volatility_2v2
+            return self.hidden_rating_1v1, self.hidden_rd_1v1, self.hidden_volatility_1v1
+        return self.hidden_rating_2v2, self.hidden_rd_2v2, self.hidden_volatility_2v2
+
+    def visible_rating_state(self, mode):
+        if mode == "1v1":
+            return self.visible_rating_1v1, self.visible_rd_1v1, self.visible_volatility_1v1
+        return self.visible_rating_2v2, self.visible_rd_2v2, self.visible_volatility_2v2
+
+    def visible_rating(self, mode):
+        return self.visible_rating_1v1 if mode == "1v1" else self.visible_rating_2v2
 
     def winrate(self, mode):
         matches = self.matches_1v1 if mode == "1v1" else self.matches_2v2

@@ -7,9 +7,9 @@
     <form method="post" class="settings-grid">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% for key, label in [
-            ('glicko_tau','Glicko tau'),
-            ('glicko_default_rd','RD initial'),
-            ('glicko_default_volatility','Volatility initiale'),
+            ('glicko_tau','Hidden tau'),
+            ('glicko_default_rd','Hidden RD initial'),
+            ('glicko_default_volatility','Hidden volatility initiale'),
             ('invitation_timeout_1v1','Réponse 1v1 secondes'),
             ('invitation_timeout_2v2','Réponse 2v2 secondes'),
             ('auto_ban_hours','Bans auto heures'),

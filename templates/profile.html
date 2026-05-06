@@ -27,12 +27,12 @@
 <section class="stats-grid reveal">
     <article>
         <small>1v1</small>
-        <strong>{{ user.rating_1v1|round|int }}</strong>
+        <strong>{{ user.visible_rating_1v1|round|int }}</strong>
         <span>{{ user.matches_1v1 }} matchs · {{ user.winrate('1v1') }} %</span>
     </article>
     <article>
         <small>2v2</small>
-        <strong>{{ user.rating_2v2|round|int }}</strong>
+        <strong>{{ user.visible_rating_2v2|round|int }}</strong>
         <span>{{ user.matches_2v2 }} matchs · {{ user.winrate('2v2') }} %</span>
     </article>
 </section>

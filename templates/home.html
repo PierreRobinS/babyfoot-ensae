@@ -5,6 +5,11 @@
 {% block content %}
 <div class="home-page" data-dashboard>
     <section class="hero-panel home-hero reveal">
+        <div class="poster-masthead" aria-label="Qui domine le babyfoot a l'ENSAE ?">
+            <span>Qui domine</span>
+            <strong>le babyfoot</strong>
+            <span>a l'ENSAE ?</span>
+        </div>
         <div class="home-id">
             <img src="{{ current_user.avatar_url }}" alt="">
             <span>
@@ -13,8 +18,8 @@
             </span>
         </div>
         <div class="rating-rings">
-            <span>1v1<br><strong>{{ current_user.rating_1v1|round|int }}</strong></span>
-            <span>2v2<br><strong>{{ current_user.rating_2v2|round|int }}</strong></span>
+            <span>1v1<br><strong>{{ current_user.visible_rating_1v1|round|int }}</strong></span>
+            <span>2v2<br><strong>{{ current_user.visible_rating_2v2|round|int }}</strong></span>
         </div>
     </section>
 

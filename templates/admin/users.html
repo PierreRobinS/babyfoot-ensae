@@ -19,8 +19,8 @@
                 <b class="{% if user.is_banned %}negative{% else %}positive{% endif %}">{{ "Banni" if user.is_banned else "Actif" }}</b>
             </header>
             <div class="admin-meta">
-                <span>1v1 <strong>{{ user.rating_1v1|round|int }}</strong></span>
-                <span>2v2 <strong>{{ user.rating_2v2|round|int }}</strong></span>
+                <span>1v1 <strong>{{ user.visible_rating_1v1|round|int }}</strong></span>
+                <span>2v2 <strong>{{ user.visible_rating_2v2|round|int }}</strong></span>
                 <span>Inscrit <strong>{{ user.created_at.strftime('%d/%m/%y') }}</strong></span>
                 <span>Login <strong>{% if user.last_login_at %}{{ user.last_login_at.strftime('%d/%m') }}{% else %}-{% endif %}</strong></span>
             </div>
@@ -28,8 +28,8 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="update">
                 <input name="pseudo" value="{{ user.pseudo }}" aria-label="Pseudo">
-                <input name="rating_1v1" type="number" step="1" value="{{ user.rating_1v1|round|int }}" aria-label="Elo 1v1">
-                <input name="rating_2v2" type="number" step="1" value="{{ user.rating_2v2|round|int }}" aria-label="Elo 2v2">
+                <input name="visible_rating_1v1" type="number" step="1" value="{{ user.visible_rating_1v1|round|int }}" aria-label="Elo visible 1v1">
+                <input name="visible_rating_2v2" type="number" step="1" value="{{ user.visible_rating_2v2|round|int }}" aria-label="Elo visible 2v2">
                 <button class="secondary-btn" type="submit">Modifier</button>
             </form>
             <div class="admin-button-grid">

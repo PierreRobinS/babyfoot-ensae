@@ -20,7 +20,7 @@
                     <strong>{{ user.pseudo }}</strong>
                     <small>{{ user.matches_1v1 }} matchs · {{ user.winrate('1v1') }} %</small>
                 </span>
-                <span class="rank-elo">{{ user.rating_1v1|round|int }}</span>
+                <span class="rank-elo">{{ user.visible_rating_1v1|round|int }}</span>
                 <small class="rank-date">{% if user.last_activity %}{{ user.last_activity.strftime('%d/%m') }}{% else %}Neuf{% endif %}</small>
             </a>
         {% endfor %}
@@ -35,7 +35,7 @@
                     <strong>{{ user.pseudo }}</strong>
                     <small>{{ user.matches_2v2 }} matchs · {{ user.winrate('2v2') }} %</small>
                 </span>
-                <span class="rank-elo">{{ user.rating_2v2|round|int }}</span>
+                <span class="rank-elo">{{ user.visible_rating_2v2|round|int }}</span>
                 <small class="rank-date">{% if user.last_activity %}{{ user.last_activity.strftime('%d/%m') }}{% else %}Neuf{% endif %}</small>
             </a>
         {% endfor %}

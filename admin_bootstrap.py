@@ -15,6 +15,21 @@ USER_COLUMNS = {
     "badge": "VARCHAR(80)",
 }
 
+DUAL_RATING_COLUMNS = {
+    "hidden_rating_1v1": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RATING}",
+    "hidden_rd_1v1": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RD}",
+    "hidden_volatility_1v1": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_VOLATILITY}",
+    "hidden_rating_2v2": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RATING}",
+    "hidden_rd_2v2": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RD}",
+    "hidden_volatility_2v2": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_VOLATILITY}",
+    "visible_rating_1v1": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RATING}",
+    "visible_rd_1v1": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RD}",
+    "visible_volatility_1v1": f"FLOAT NOT NULL DEFAULT {Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY}",
+    "visible_rating_2v2": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RATING}",
+    "visible_rd_2v2": f"FLOAT NOT NULL DEFAULT {Config.GLICKO_DEFAULT_RD}",
+    "visible_volatility_2v2": f"FLOAT NOT NULL DEFAULT {Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY}",
+}
+
 MATCH_COLUMNS = {
     "live_score_a": "INTEGER NOT NULL DEFAULT 0",
     "live_score_b": "INTEGER NOT NULL DEFAULT 0",
@@ -39,10 +54,14 @@ def migrate_light_schema():
     if "user" not in inspector.get_table_names():
         return
     existing = {column["name"] for column in inspector.get_columns("user")}
+    added_user_columns = set()
     with db.engine.begin() as connection:
-        for name, ddl in USER_COLUMNS.items():
+        for name, ddl in {**USER_COLUMNS, **DUAL_RATING_COLUMNS}.items():
             if name not in existing:
                 connection.execute(text(f"ALTER TABLE user ADD COLUMN {name} {ddl}"))
+                added_user_columns.add(name)
+    existing = existing | added_user_columns
+    _backfill_dual_rating_columns(existing, added_user_columns)
     if "match" in inspector.get_table_names():
         existing = {column["name"] for column in inspector.get_columns("match")}
         with db.engine.begin() as connection:
@@ -66,6 +85,61 @@ def migrate_light_schema():
                         ),
                         {"default_value": default_value},
                     )
+
+
+def _backfill_dual_rating_columns(existing_columns, added_columns):
+    # Existing deployments used rating_*/rd_*/volatility_* as the only rating.
+    # On the first dual-rating boot, copy those values into hidden and visible
+    # so history is preserved while future updates split the two systems.
+    legacy_map = {
+        "hidden_rating_1v1": ("rating_1v1", Config.GLICKO_DEFAULT_RATING),
+        "hidden_rd_1v1": ("rd_1v1", Config.GLICKO_DEFAULT_RD),
+        "hidden_volatility_1v1": ("volatility_1v1", Config.GLICKO_DEFAULT_VOLATILITY),
+        "hidden_rating_2v2": ("rating_2v2", Config.GLICKO_DEFAULT_RATING),
+        "hidden_rd_2v2": ("rd_2v2", Config.GLICKO_DEFAULT_RD),
+        "hidden_volatility_2v2": ("volatility_2v2", Config.GLICKO_DEFAULT_VOLATILITY),
+        "visible_rating_1v1": ("rating_1v1", Config.GLICKO_DEFAULT_RATING),
+        "visible_rating_2v2": ("rating_2v2", Config.GLICKO_DEFAULT_RATING),
+    }
+    visible_rd_map = {
+        "visible_rd_1v1": "rd_1v1",
+        "visible_rd_2v2": "rd_2v2",
+    }
+    visible_volatility = {
+        "visible_volatility_1v1": Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY,
+        "visible_volatility_2v2": Config.VISIBLE_GLICKO_DEFAULT_VOLATILITY,
+    }
+
+    with db.engine.begin() as connection:
+        for column, (legacy, default) in legacy_map.items():
+            if column not in existing_columns:
+                continue
+            source = legacy if legacy in existing_columns else f"{default}"
+            condition = "1 = 1" if column in added_columns else f"{column} IS NULL"
+            connection.execute(text(f"UPDATE user SET {column} = COALESCE({source}, :default) WHERE {condition}"), {"default": default})
+
+        for column, legacy in visible_rd_map.items():
+            if column not in existing_columns:
+                continue
+            source = legacy if legacy in existing_columns else None
+            condition = "1 = 1" if column in added_columns else f"{column} IS NULL"
+            if source:
+                connection.execute(
+                    text(
+                        f"UPDATE user SET {column} = "
+                        f"CASE WHEN COALESCE({source}, :default_rd) < :min_rd THEN :min_rd "
+                        f"ELSE COALESCE({source}, :default_rd) END "
+                        f"WHERE {condition}"
+                    ),
+                    {"default_rd": Config.GLICKO_DEFAULT_RD, "min_rd": Config.VISIBLE_GLICKO_MIN_RD},
+                )
+            else:
+                connection.execute(text(f"UPDATE user SET {column} = :default_rd WHERE {condition}"), {"default_rd": Config.GLICKO_DEFAULT_RD})
+
+        for column, default in visible_volatility.items():
+            if column in existing_columns:
+                condition = "1 = 1" if column in added_columns else f"{column} IS NULL"
+                connection.execute(text(f"UPDATE user SET {column} = :default WHERE {condition}"), {"default": default})
 
 
 def ensure_default_settings():

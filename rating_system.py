@@ -82,8 +82,7 @@ def predict_score_distribution(point_probability, target_score=10):
     }
 
 
-def _volatility_update(phi, sigma, delta, v):
-    tau = Config.GLICKO_TAU
+def _volatility_update(phi, sigma, delta, v, tau):
     epsilon = Config.GLICKO_EPSILON
     a = math.log(sigma * sigma)
 
@@ -118,7 +117,7 @@ def _volatility_update(phi, sigma, delta, v):
     return math.exp(a / 2.0)
 
 
-def _update_single_game(player, opponent, observed_score):
+def _update_single_game(player, opponent, observed_score, tau, min_rd, max_rd):
     mu = _to_mu(player.rating)
     phi = _to_phi(player.rd)
     sigma = player.volatility
@@ -128,38 +127,33 @@ def _update_single_game(player, opponent, observed_score):
     g_phi = _g(opponent_phi)
     expected = _expected_score(mu, opponent_mu, opponent_phi)
 
-    # Glicko-2 usually receives a binary s in {0, 1}. Here s is continuous:
-    # points_scored / total_points. The same likelihood gradient works and
-    # gives a smooth update for close or lopsided score lines.
+    # Glicko-2 usually receives a binary s in {0, 1}. Both app systems use a
+    # continuous s; hidden uses score ratio, visible uses a more emotional
+    # hybrid that rewards the win while keeping score-gap information.
     s = max(0.0, min(1.0, observed_score))
     v = 1.0 / (g_phi * g_phi * expected * (1.0 - expected))
     delta = v * g_phi * (s - expected)
 
-    new_sigma = _volatility_update(phi, sigma, delta, v)
+    new_sigma = _volatility_update(phi, sigma, delta, v, tau)
     phi_star = math.sqrt(phi * phi + new_sigma * new_sigma)
     new_phi = 1.0 / math.sqrt((1.0 / (phi_star * phi_star)) + (1.0 / v))
     new_mu = mu + new_phi * new_phi * g_phi * (s - expected)
 
     return RatingState(
         rating=_from_mu(new_mu),
-        rd=max(30.0, min(350.0, _from_phi(new_phi))),
+        rd=max(min_rd, min(max_rd, _from_phi(new_phi))),
         volatility=new_sigma,
     )
 
 
-def update_glicko_1v1(player_a, player_b, score_a, score_b):
-    total = max(1, score_a + score_b)
-    observed_a = score_a / total
-    observed_b = score_b / total
-    probability_a = predict_point_probability(
-        player_a.rating, player_b.rating, player_b.rd
-    )
+def _score_ratio(score, opponent_score):
+    total = max(1, score + opponent_score)
+    return score / total
 
-    return {
-        "player_a": _update_single_game(player_a, player_b, observed_a),
-        "player_b": _update_single_game(player_b, player_a, observed_b),
-        "probability_a": probability_a,
-    }
+
+def _visible_hybrid_score(score, opponent_score):
+    win_indicator = 1.0 if score > opponent_score else 0.0
+    return 0.5 * win_indicator + 0.5 * _score_ratio(score, opponent_score)
 
 
 def _team_rating(players):
@@ -169,6 +163,142 @@ def _team_rating(players):
     rd = math.sqrt(sum(player.rd * player.rd for player in players)) / len(players)
     volatility = sum(player.volatility for player in players) / len(players)
     return RatingState(rating=rating, rd=rd, volatility=volatility)
+
+
+def update_hidden_glicko(team_a, team_b, score_a, score_b):
+    """Update the hidden skill model used only for predictions.
+
+    This deliberately preserves the old app behavior: the observed score is
+    just score_i / (score_i + score_j), with the denominator floored at 1.
+    """
+    observed_a = _score_ratio(score_a, score_b)
+    observed_b = _score_ratio(score_b, score_a)
+
+    temp_a = _team_rating(team_a)
+    temp_b = _team_rating(team_b)
+    probability_a = predict_point_probability(temp_a.rating, temp_b.rating, temp_b.rd)
+
+    return {
+        "team_a": [
+            _update_single_game(
+                player,
+                temp_b,
+                observed_a,
+                Config.GLICKO_TAU,
+                Config.HIDDEN_GLICKO_MIN_RD,
+                Config.HIDDEN_GLICKO_MAX_RD,
+            )
+            for player in team_a
+        ],
+        "team_b": [
+            _update_single_game(
+                player,
+                temp_a,
+                observed_b,
+                Config.GLICKO_TAU,
+                Config.HIDDEN_GLICKO_MIN_RD,
+                Config.HIDDEN_GLICKO_MAX_RD,
+            )
+            for player in team_b
+        ],
+        "probability_a": probability_a,
+    }
+
+
+def update_visible_glicko(team_a, team_b, score_a, score_b):
+    """Update the public ladder model.
+
+    Visible rating is intentionally more fun than the hidden predictor:
+    s = 0.5 * win_indicator + 0.5 * score_ratio, plus higher tau/min RD.
+    """
+    observed_a = _visible_hybrid_score(score_a, score_b)
+    observed_b = _visible_hybrid_score(score_b, score_a)
+
+    temp_a = _team_rating(team_a)
+    temp_b = _team_rating(team_b)
+    probability_a = predict_point_probability(temp_a.rating, temp_b.rating, temp_b.rd)
+
+    return {
+        "team_a": [
+            _update_single_game(
+                player,
+                temp_b,
+                observed_a,
+                Config.VISIBLE_GLICKO_TAU,
+                Config.VISIBLE_GLICKO_MIN_RD,
+                Config.VISIBLE_GLICKO_MAX_RD,
+            )
+            for player in team_a
+        ],
+        "team_b": [
+            _update_single_game(
+                player,
+                temp_a,
+                observed_b,
+                Config.VISIBLE_GLICKO_TAU,
+                Config.VISIBLE_GLICKO_MIN_RD,
+                Config.VISIBLE_GLICKO_MAX_RD,
+            )
+            for player in team_b
+        ],
+        "probability_a": probability_a,
+    }
+
+
+def update_hidden_glicko_1v1(player_a, player_b, score_a, score_b):
+    result = update_hidden_glicko([player_a], [player_b], score_a, score_b)
+    return {
+        "player_a": result["team_a"][0],
+        "player_b": result["team_b"][0],
+        "probability_a": result["probability_a"],
+    }
+
+
+def update_visible_glicko_1v1(player_a, player_b, score_a, score_b):
+    result = update_visible_glicko([player_a], [player_b], score_a, score_b)
+    return {
+        "player_a": result["team_a"][0],
+        "player_b": result["team_b"][0],
+        "probability_a": result["probability_a"],
+    }
+
+
+def update_hidden_glicko_2v2(team_a, team_b, score_a, score_b):
+    return update_hidden_glicko(team_a, team_b, score_a, score_b)
+
+
+def update_visible_glicko_2v2(team_a, team_b, score_a, score_b):
+    return update_visible_glicko(team_a, team_b, score_a, score_b)
+
+
+# Backward-compatible names map to the hidden system, the original behavior.
+def update_glicko_1v1(player_a, player_b, score_a, score_b):
+    total = max(1, score_a + score_b)
+    observed_a = score_a / total
+    observed_b = score_b / total
+    probability_a = predict_point_probability(
+        player_a.rating, player_b.rating, player_b.rd
+    )
+
+    return {
+        "player_a": _update_single_game(
+            player_a,
+            player_b,
+            observed_a,
+            Config.GLICKO_TAU,
+            Config.HIDDEN_GLICKO_MIN_RD,
+            Config.HIDDEN_GLICKO_MAX_RD,
+        ),
+        "player_b": _update_single_game(
+            player_b,
+            player_a,
+            observed_b,
+            Config.GLICKO_TAU,
+            Config.HIDDEN_GLICKO_MIN_RD,
+            Config.HIDDEN_GLICKO_MAX_RD,
+        ),
+        "probability_a": probability_a,
+    }
 
 
 def update_glicko_2v2(team_a, team_b, score_a, score_b):
@@ -181,7 +311,27 @@ def update_glicko_2v2(team_a, team_b, score_a, score_b):
     probability_a = predict_point_probability(temp_a.rating, temp_b.rating, temp_b.rd)
 
     return {
-        "team_a": [_update_single_game(player, temp_b, observed_a) for player in team_a],
-        "team_b": [_update_single_game(player, temp_a, observed_b) for player in team_b],
+        "team_a": [
+            _update_single_game(
+                player,
+                temp_b,
+                observed_a,
+                Config.GLICKO_TAU,
+                Config.HIDDEN_GLICKO_MIN_RD,
+                Config.HIDDEN_GLICKO_MAX_RD,
+            )
+            for player in team_a
+        ],
+        "team_b": [
+            _update_single_game(
+                player,
+                temp_a,
+                observed_b,
+                Config.GLICKO_TAU,
+                Config.HIDDEN_GLICKO_MIN_RD,
+                Config.HIDDEN_GLICKO_MAX_RD,
+            )
+            for player in team_b
+        ],
         "probability_a": probability_a,
     }

@@ -3,7 +3,33 @@ import os
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data"))
+
+
+def _inside_onedrive(path):
+    onedrive_paths = [os.getenv("OneDrive"), os.getenv("OneDriveConsumer"), os.getenv("OneDriveCommercial")]
+    resolved = path.resolve()
+    for item in onedrive_paths:
+        if item:
+            try:
+                resolved.relative_to(Path(item).resolve())
+                return True
+            except ValueError:
+                pass
+    return "onedrive" in {part.lower() for part in resolved.parts}
+
+
+def _default_data_dir():
+    if os.getenv("DATA_DIR"):
+        return Path(os.getenv("DATA_DIR"))
+    local_app_data = os.getenv("LOCALAPPDATA")
+    if os.name == "nt" and local_app_data and _inside_onedrive(BASE_DIR):
+        return Path(local_app_data) / "BabyfootENSAE" / "data"
+    return BASE_DIR / "data"
+
+
+DATA_DIR = _default_data_dir()
+DATABASE_PATH = DATA_DIR / "babyfoot.sqlite3"
+DATABASE_URI = f"sqlite:///{DATABASE_PATH.as_posix()}"
 
 
 class Config:
@@ -12,7 +38,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     DATA_DIR = DATA_DIR
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATA_DIR / 'babyfoot.sqlite3'}"
+    SQLALCHEMY_DATABASE_URI = DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = Path(os.getenv("UPLOAD_FOLDER", BASE_DIR / "static" / "uploads"))
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024
@@ -25,6 +51,17 @@ class Config:
     GLICKO_SCALE = 173.7178
     GLICKO_TAU = 0.5
     GLICKO_EPSILON = 0.000001
+
+    # Hidden Skill Rating keeps the current conservative Glicko-2 behavior.
+    HIDDEN_GLICKO_MIN_RD = 30.0
+    HIDDEN_GLICKO_MAX_RD = 350.0
+
+    # Visible Ladder Rating is intentionally livelier: wins matter more,
+    # score gaps still count, and RD/volatility stay high enough to move.
+    VISIBLE_GLICKO_DEFAULT_VOLATILITY = 0.075
+    VISIBLE_GLICKO_TAU = 0.9
+    VISIBLE_GLICKO_MIN_RD = 80.0
+    VISIBLE_GLICKO_MAX_RD = 350.0
 
     INVITATION_TIMEOUT_1V1_SECONDS = 2 * 60
     INVITATION_TIMEOUT_2V2_SECONDS = 3 * 60

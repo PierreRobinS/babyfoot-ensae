@@ -11,8 +11,8 @@ from rating_system import (
     RatingState,
     predict_point_probability,
     predict_score_distribution,
-    update_glicko_1v1,
-    update_glicko_2v2,
+    update_hidden_glicko,
+    update_visible_glicko,
 )
 
 
@@ -134,24 +134,23 @@ def register_disagreement(match, triggered_by):
     return f"Désaccord enregistré: ban temporaire actif jusqu'au {until}."
 
 
-def _rating_state(user, mode):
-    rating, rd, volatility = user.rating_state(mode)
+def _rating_state(user, mode, system):
+    if system == "hidden":
+        rating, rd, volatility = user.hidden_rating_state(mode)
+    else:
+        rating, rd, volatility = user.visible_rating_state(mode)
     return RatingState(rating=rating, rd=rd, volatility=volatility)
 
 
-def _set_rating_state(user, mode, state):
-    if mode == "1v1":
-        user.rating_1v1 = state.rating
-        user.rd_1v1 = state.rd
-        user.volatility_1v1 = state.volatility
-    else:
-        user.rating_2v2 = state.rating
-        user.rd_2v2 = state.rd
-        user.volatility_2v2 = state.volatility
+def _set_rating_state(user, mode, system, state):
+    prefix = "hidden" if system == "hidden" else "visible"
+    setattr(user, f"{prefix}_rating_{mode}", state.rating)
+    setattr(user, f"{prefix}_rd_{mode}", state.rd)
+    setattr(user, f"{prefix}_volatility_{mode}", state.volatility)
 
 
-def _rating_value(user, mode):
-    return user.rating_1v1 if mode == "1v1" else user.rating_2v2
+def _visible_rating_value(user, mode):
+    return user.visible_rating(mode)
 
 
 def complete_match(match):
@@ -161,38 +160,37 @@ def complete_match(match):
     team_a = match.team("A")
     team_b = match.team("B")
     for participant in match.participants:
-        participant.elo_before = _rating_value(participant.user, match.mode)
+        participant.elo_before = _visible_rating_value(participant.user, match.mode)
 
-    if match.mode == "1v1":
-        player_a = team_a[0].user
-        player_b = team_b[0].user
-        result = update_glicko_1v1(
-            _rating_state(player_a, "1v1"),
-            _rating_state(player_b, "1v1"),
-            match.score_a,
-            match.score_b,
-        )
-        _set_rating_state(player_a, "1v1", result["player_a"])
-        _set_rating_state(player_b, "1v1", result["player_b"])
-        _apply_stats(player_a, "1v1", match.score_a > match.score_b)
-        _apply_stats(player_b, "1v1", match.score_b > match.score_a)
-    else:
-        result = update_glicko_2v2(
-            [_rating_state(p.user, "2v2") for p in team_a],
-            [_rating_state(p.user, "2v2") for p in team_b],
-            match.score_a,
-            match.score_b,
-        )
-        for participant, state in zip(team_a, result["team_a"]):
-            _set_rating_state(participant.user, "2v2", state)
-            _apply_stats(participant.user, "2v2", match.score_a > match.score_b)
-        for participant, state in zip(team_b, result["team_b"]):
-            _set_rating_state(participant.user, "2v2", state)
-            _apply_stats(participant.user, "2v2", match.score_b > match.score_a)
+    # Hidden Skill Rating updates first and remains the private predictor.
+    hidden_result = update_hidden_glicko(
+        [_rating_state(p.user, match.mode, "hidden") for p in team_a],
+        [_rating_state(p.user, match.mode, "hidden") for p in team_b],
+        match.score_a,
+        match.score_b,
+    )
+    for participant, state in zip(team_a, hidden_result["team_a"]):
+        _set_rating_state(participant.user, match.mode, "hidden", state)
+    for participant, state in zip(team_b, hidden_result["team_b"]):
+        _set_rating_state(participant.user, match.mode, "hidden", state)
+
+    # Visible Ladder Rating uses the fun hybrid score and drives all public Elo.
+    visible_result = update_visible_glicko(
+        [_rating_state(p.user, match.mode, "visible") for p in team_a],
+        [_rating_state(p.user, match.mode, "visible") for p in team_b],
+        match.score_a,
+        match.score_b,
+    )
+    for participant, state in zip(team_a, visible_result["team_a"]):
+        _set_rating_state(participant.user, match.mode, "visible", state)
+        _apply_stats(participant.user, match.mode, match.score_a > match.score_b)
+    for participant, state in zip(team_b, visible_result["team_b"]):
+        _set_rating_state(participant.user, match.mode, "visible", state)
+        _apply_stats(participant.user, match.mode, match.score_b > match.score_a)
 
     now = utcnow()
     for participant in match.participants:
-        participant.elo_after = _rating_value(participant.user, match.mode)
+        participant.elo_after = _visible_rating_value(participant.user, match.mode)
         participant.user.last_activity = now
         participant.validation_status = "accepted"
 
@@ -228,13 +226,17 @@ def parse_score(score_a, score_b):
 
 
 def _team_prediction_values(users):
-    rating = sum(user.rating_2v2 for user in users) / len(users)
-    rd = math.sqrt(sum(user.rd_2v2 * user.rd_2v2 for user in users)) / len(users)
+    rating = sum(user.hidden_rating_2v2 for user in users) / len(users)
+    rd = math.sqrt(sum(user.hidden_rd_2v2 * user.hidden_rd_2v2 for user in users)) / len(users)
     return rating, rd
 
 
 def prediction_1v1(player_a, player_b):
-    probability = predict_point_probability(player_a.rating_1v1, player_b.rating_1v1, player_b.rd_1v1)
+    probability = predict_point_probability(
+        player_a.hidden_rating_1v1,
+        player_b.hidden_rating_1v1,
+        player_b.hidden_rd_1v1,
+    )
     distribution = predict_score_distribution(probability)
     favorite = player_a if probability >= 0.5 else player_b
     favorite_probability = probability if probability >= 0.5 else 1.0 - probability
@@ -295,8 +297,8 @@ def serialize_user(user):
         "email": user.email,
         "name": user.full_name,
         "avatar": user.avatar_url,
-        "rating_1v1": round(user.rating_1v1),
-        "rating_2v2": round(user.rating_2v2),
+        "rating_1v1": round(user.visible_rating_1v1),
+        "rating_2v2": round(user.visible_rating_2v2),
     }
 
 

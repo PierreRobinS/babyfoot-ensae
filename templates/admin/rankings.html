@@ -16,7 +16,7 @@
     </div>
 </section>
 <section class="admin-split reveal">
-    <article class="panel"><h2>Top 1v1</h2><div class="compact-list">{% for u in ranking_1v1 %}<a><span>{{ loop.index }}. {{ u.pseudo }}</span><strong>{{ u.rating_1v1|round|int }}</strong></a>{% endfor %}</div></article>
-    <article class="panel"><h2>Top 2v2</h2><div class="compact-list">{% for u in ranking_2v2 %}<a><span>{{ loop.index }}. {{ u.pseudo }}</span><strong>{{ u.rating_2v2|round|int }}</strong></a>{% endfor %}</div></article>
+    <article class="panel"><h2>Top 1v1</h2><div class="compact-list">{% for u in ranking_1v1 %}<a><span>{{ loop.index }}. {{ u.pseudo }}</span><strong>{{ u.visible_rating_1v1|round|int }}</strong></a>{% endfor %}</div></article>
+    <article class="panel"><h2>Top 2v2</h2><div class="compact-list">{% for u in ranking_2v2 %}<a><span>{{ loop.index }}. {{ u.pseudo }}</span><strong>{{ u.visible_rating_2v2|round|int }}</strong></a>{% endfor %}</div></article>
 </section>
 {% endblock %}
