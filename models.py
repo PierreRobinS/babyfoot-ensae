@@ -29,6 +29,20 @@ class User(UserMixin, db.Model):
     banned_until = db.Column(db.DateTime, nullable=True)
     badge = db.Column(db.String(80), nullable=True)
 
+    # Legacy physical columns kept only so old SQLite databases can still
+    # accept new users after the hidden/visible rating split. Public code must
+    # use visible_* and prediction code must use hidden_*.
+    _legacy_rating_1v1 = db.Column("rating_1v1", db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
+    _legacy_rd_1v1 = db.Column("rd_1v1", db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
+    _legacy_volatility_1v1 = db.Column(
+        "volatility_1v1", db.Float, default=Config.GLICKO_DEFAULT_VOLATILITY, nullable=False
+    )
+    _legacy_rating_2v2 = db.Column("rating_2v2", db.Float, default=Config.GLICKO_DEFAULT_RATING, nullable=False)
+    _legacy_rd_2v2 = db.Column("rd_2v2", db.Float, default=Config.GLICKO_DEFAULT_RD, nullable=False)
+    _legacy_volatility_2v2 = db.Column(
+        "volatility_2v2", db.Float, default=Config.GLICKO_DEFAULT_VOLATILITY, nullable=False
+    )
+
     # Dual-rating architecture:
     # hidden_* keeps the precise probabilistic skill model used for predictions,
     # visible_* drives the public ladder shown to players.

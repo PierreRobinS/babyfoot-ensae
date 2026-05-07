@@ -8,6 +8,7 @@ from services import parse_names_from_email
 
 USER_COLUMNS = {
     "last_login_at": "DATETIME",
+    "last_activity": "DATETIME",
     "is_admin": "BOOLEAN NOT NULL DEFAULT 0",
     "is_banned": "BOOLEAN NOT NULL DEFAULT 0",
     "ban_reason": "VARCHAR(255)",
