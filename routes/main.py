@@ -21,7 +21,9 @@ main_bp = Blueprint("main", __name__)
 def home():
     expire_matches()
     payload = dashboard_payload(current_user)
-    return render_template("home.html", dashboard=payload)
+    top_1v1 = User.query.order_by(User.visible_rating_1v1.desc()).first()
+    top_2v2 = User.query.order_by(User.visible_rating_2v2.desc()).first()
+    return render_template("home.html", dashboard=payload, top_1v1=top_1v1, top_2v2=top_2v2)
 
 
 @main_bp.route("/api/users/search")

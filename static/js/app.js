@@ -17,11 +17,17 @@ function showToast(message, type = "success") {
     toast.className = `toast ${type}`;
     toast.textContent = message;
     root.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
     window.setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateY(-8px)";
-        window.setTimeout(() => toast.remove(), 220);
+        dismissToast(toast);
     }, 3600);
+}
+
+function dismissToast(toast) {
+    if (!toast) return;
+    toast.classList.remove("show");
+    toast.classList.add("is-exiting");
+    window.setTimeout(() => toast.remove(), 380);
 }
 
 async function fetchJson(url, options = {}) {
@@ -43,9 +49,10 @@ async function fetchJson(url, options = {}) {
 function setupExistingToasts() {
     $$(".toast").forEach((toast, index) => {
         window.setTimeout(() => {
-            toast.style.opacity = "0";
-            toast.style.transform = "translateY(-8px)";
-            window.setTimeout(() => toast.remove(), 220);
+            toast.classList.add("show");
+        }, index * 80);
+        window.setTimeout(() => {
+            dismissToast(toast);
         }, 3600 + index * 450);
     });
 }
@@ -53,10 +60,12 @@ function setupExistingToasts() {
 function setupModeSwitch() {
     const switcher = $("[data-mode-switch]");
     if (!switcher) return;
+    updateSegmentedIndicator(switcher);
     $$("button", switcher).forEach((button) => {
         button.addEventListener("click", () => {
             $$("button", switcher).forEach((item) => item.classList.remove("active"));
             button.classList.add("active");
+            updateSegmentedIndicator(switcher);
             const target = button.dataset.modeTarget;
             $("#challenge-one")?.classList.toggle("active", target === "one");
             $("#challenge-two")?.classList.toggle("active", target === "two");
@@ -67,13 +76,31 @@ function setupModeSwitch() {
 function setupRankTabs() {
     const tabs = $("[data-rank-tabs]");
     if (!tabs) return;
+    updateSegmentedIndicator(tabs);
     $$("button", tabs).forEach((button) => {
         button.addEventListener("click", () => {
             $$("button", tabs).forEach((item) => item.classList.remove("active"));
             button.classList.add("active");
+            updateSegmentedIndicator(tabs);
             $$(".ranking-list").forEach((list) => list.classList.remove("active"));
             $(`#${button.dataset.rankTarget}`)?.classList.add("active");
         });
+    });
+}
+
+function updateSegmentedIndicator(root) {
+    const active = $("button.active", root);
+    if (!active) return;
+    root.style.setProperty("--pill-x", `${active.offsetLeft}px`);
+    root.style.setProperty("--pill-y", `${active.offsetTop}px`);
+    root.style.setProperty("--pill-width", `${active.offsetWidth}px`);
+    root.style.setProperty("--pill-height", `${active.offsetHeight}px`);
+}
+
+function setupSegmentedIndicators() {
+    $$("[data-mode-switch], [data-rank-tabs]").forEach(updateSegmentedIndicator);
+    window.addEventListener("resize", () => {
+        $$("[data-mode-switch], [data-rank-tabs]").forEach(updateSegmentedIndicator);
     });
 }
 
@@ -205,6 +232,67 @@ function setupChallengeForms() {
             }
         });
     });
+}
+
+function setupEloOdometer() {
+    const root = $("[data-elo-odometer]");
+    if (!root) return;
+
+    const number = $("[data-elo-number]", root);
+    const label = $("[data-elo-label]", root);
+    const items = [
+        { label: "1v1 Elo", value: Number(root.dataset.eloOne || 0) },
+        { label: "2v2 Elo", value: Number(root.dataset.eloTwo || 0) },
+    ];
+    let activeIndex = 0;
+    let displayedValue = 0;
+
+    function digitsFor(value) {
+        return String(Math.max(0, Math.round(value))).split("").map((digit) => Number(digit));
+    }
+
+    function digitSequence(from, to, columnIndex) {
+        const distance = (to - from + 10) % 10;
+        const cycles = 1 + (columnIndex % 2);
+        const steps = cycles * 10 + distance;
+        return Array.from({ length: steps + 1 }, (_, index) => (from + index) % 10);
+    }
+
+    function render(item) {
+        const nextDigits = digitsFor(item.value);
+        const previousText = String(Math.max(0, Math.round(displayedValue)));
+        const previousDigits = previousText.padStart(nextDigits.length, "0").slice(-nextDigits.length).split("").map(Number);
+
+        number.innerHTML = nextDigits.map((digit, index) => {
+            const from = previousDigits[index] ?? 0;
+            const sequence = digitSequence(from, digit, index);
+            return `
+                <span class="elo-odometer-digit" aria-hidden="true">
+                    <span class="elo-odometer-strip" data-steps="${sequence.length - 1}">
+                        ${sequence.map((itemDigit) => `<span>${itemDigit}</span>`).join("")}
+                    </span>
+                </span>
+            `;
+        }).join("");
+
+        number.setAttribute("aria-label", String(Math.round(item.value)));
+        label.textContent = item.label;
+        root.setAttribute("aria-label", `${item.label} ${Math.round(item.value)}`);
+
+        requestAnimationFrame(() => {
+            $$(".elo-odometer-strip", number).forEach((strip) => {
+                strip.style.transform = `translateY(calc(-0.92em * ${strip.dataset.steps}))`;
+            });
+        });
+
+        displayedValue = item.value;
+    }
+
+    render(items[activeIndex]);
+    window.setInterval(() => {
+        activeIndex = (activeIndex + 1) % items.length;
+        render(items[activeIndex]);
+    }, 7000);
 }
 
 function invitationCard(invitation) {
@@ -511,8 +599,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setupExistingToasts();
     setupModeSwitch();
     setupRankTabs();
+    setupSegmentedIndicators();
     setupAutocomplete();
     setupChallengeForms();
+    setupEloOdometer();
     setupInvitationActions();
     setupChrono();
     setupLiveGame();
