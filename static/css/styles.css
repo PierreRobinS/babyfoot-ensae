@@ -905,10 +905,17 @@ input[type="checkbox"] {
     padding: 18px;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05)),
-        radial-gradient(72% 48% at 50% 34%, rgba(255, 59, 72, 0.18), transparent 68%),
+        radial-gradient(circle at 50% 38%, rgba(255, 59, 72, 0.1), transparent 44%),
         radial-gradient(42% 32% at 30% 8%, rgba(255, 255, 255, 0.12), transparent 70%),
         radial-gradient(80% 60% at 100% 0%, rgba(119, 199, 255, 0.16), transparent 60%),
         rgba(255, 255, 255, 0.08);
+}
+
+.home-hero::before {
+    background:
+        radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 44%);
+    opacity: 0.36;
 }
 
 .elo-odometer {
@@ -926,14 +933,14 @@ input[type="checkbox"] {
     content: "";
     position: absolute;
     left: 50%;
-    top: 52%;
-    width: min(78%, 420px);
-    aspect-ratio: 1.85;
+    top: 54%;
+    width: min(56vw, 300px);
+    aspect-ratio: 1;
     border-radius: 50%;
     background:
-        radial-gradient(closest-side, rgba(255, 59, 72, 0.24), rgba(255, 59, 72, 0.11) 42%, transparent 78%);
-    filter: blur(24px);
-    opacity: 0.8;
+        radial-gradient(circle, rgba(255, 59, 72, 0.2) 0%, rgba(255, 59, 72, 0.09) 34%, transparent 72%);
+    filter: blur(34px);
+    opacity: 0.58;
     pointer-events: none;
     transform: translate(-50%, -50%);
 }
@@ -972,7 +979,7 @@ input[type="checkbox"] {
     font-weight: 950;
     letter-spacing: -0.01em;
     line-height: 0.92;
-    text-shadow: 0 0 18px rgba(255, 59, 72, 0.24);
+    text-shadow: 0 0 14px rgba(255, 59, 72, 0.18);
     -webkit-text-fill-color: transparent;
     -webkit-text-stroke: clamp(1.4px, 0.36vw, 2.8px) rgba(255, 59, 72, 0.88);
 }
@@ -1905,8 +1912,15 @@ input[type="checkbox"] {
         min-height: 136px;
     }
 
+    .elo-odometer::before {
+        width: 58vw;
+        filter: blur(38px);
+        opacity: 0.38;
+    }
+
     .elo-odometer-number {
         font-size: clamp(3.7rem, 24vw, 6.2rem);
+        text-shadow: 0 0 10px rgba(255, 59, 72, 0.14);
     }
 
     .segmented button {

@@ -4,19 +4,17 @@
 
 {% block content %}
 <div class="home-page" data-dashboard>
-    {% set hero_1v1 = top_1v1 or current_user %}
-    {% set hero_2v2 = top_2v2 or current_user %}
     <section class="hero-panel home-hero reveal">
         <div
             class="elo-odometer"
             data-elo-odometer
-            data-elo-one="{{ hero_1v1.visible_rating_1v1|round|int }}"
-            data-elo-two="{{ hero_2v2.visible_rating_2v2|round|int }}"
+            data-elo-one="{{ current_user.visible_rating_1v1|round|int }}"
+            data-elo-two="{{ current_user.visible_rating_2v2|round|int }}"
             aria-live="polite"
-            aria-label="1v1 Elo {{ hero_1v1.visible_rating_1v1|round|int }}"
+            aria-label="1v1 Elo {{ current_user.visible_rating_1v1|round|int }}"
         >
             <span class="elo-odometer-label" data-elo-label>1v1 Elo</span>
-            <strong class="elo-odometer-number" data-elo-number>{{ hero_1v1.visible_rating_1v1|round|int }}</strong>
+            <strong class="elo-odometer-number" data-elo-number>{{ current_user.visible_rating_1v1|round|int }}</strong>
         </div>
         <div class="home-id">
             <img src="{{ current_user.avatar_url }}" alt="">
